@@ -1,4 +1,4 @@
-import localPerformerImages, { localCategoryImages } from '@/assets/performers';
+import { useState, useEffect } from 'react';
 
 const TICKETMASTER_API_KEY = 'OFsfv5aibhR5AiIYAGsFCUPd6Ef8AR9A';
 const DISCOVERY_API_URL = 'https://app.ticketmaster.com/discovery/v2';
@@ -99,18 +99,49 @@ async function fetchTicketmasterImage(searchTerm: string): Promise<string | null
   }
 }
 
-// Hook to get performer image - uses static images for fast loading
-// API fetching is disabled for performance - images are pre-mapped
+// Hook to get performer image with Ticketmaster fallback
 export function useTicketmasterImage(
   performer: string,
   existingImage: string | undefined,
   category: string
 ): { imageUrl: string; isLoading: boolean } {
-  // Priority: local bundled image > existing external image > category default
-  const localImage = localPerformerImages[performer];
-  const categoryDefault = localCategoryImages[category as keyof typeof localCategoryImages];
-  const imageUrl = localImage || existingImage || categoryDefault || getDefaultCategoryImage(category);
-  return { imageUrl, isLoading: false };
+  const [ticketmasterImage, setTicketmasterImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Check if existing image is a placeholder/generic image
+  const isPlaceholder = !existingImage || 
+    existingImage.includes('unsplash.com') ||
+    existingImage.includes('placeholder');
+
+  useEffect(() => {
+    // Only fetch if we have a placeholder image
+    if (!isPlaceholder || !performer) {
+      return;
+    }
+
+    const cacheKey = performer.toLowerCase().trim();
+    
+    // Check cache synchronously
+    if (cacheKey in imageCache) {
+      setTicketmasterImage(imageCache[cacheKey]);
+      return;
+    }
+
+    setIsLoading(true);
+    
+    fetchTicketmasterImage(performer)
+      .then(url => {
+        setTicketmasterImage(url);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [performer, isPlaceholder]);
+
+  // Return Ticketmaster image if available, otherwise existing image
+  const imageUrl = ticketmasterImage || existingImage || getDefaultCategoryImage(category);
+
+  return { imageUrl, isLoading };
 }
 
 // Batch fetch images for multiple performers

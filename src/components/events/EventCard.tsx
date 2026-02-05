@@ -51,11 +51,10 @@ export const EventCard = ({ event, variant = 'default', className }: EventCardPr
           className
         )}
       >
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        <div className="relative aspect-[4/3] overflow-hidden">
           <img
             src={imageUrl}
             alt={event.performer}
-            loading="lazy"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
@@ -108,11 +107,10 @@ export const EventCard = ({ event, variant = 'default', className }: EventCardPr
       )}
     >
       <div className="flex flex-col sm:flex-row">
-        <div className="relative sm:w-48 aspect-video sm:aspect-square overflow-hidden bg-muted">
+        <div className="relative sm:w-48 aspect-video sm:aspect-square overflow-hidden">
           <img
             src={imageUrl}
             alt={event.performer}
-            loading="lazy"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="date-badge">
