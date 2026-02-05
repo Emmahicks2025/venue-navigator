@@ -62,6 +62,26 @@ export const InteractiveSVGMap = ({
         if (!el.closest('g[data-section-id]')) el.remove();
       });
 
+    // Override section colors based on availability
+    const sectionGroups = svg.querySelectorAll('g[data-section-id]');
+    sectionGroups.forEach((group) => {
+      const isAvailable = group.getAttribute('data-available') !== 'false';
+      const shapes = group.querySelectorAll('path, polygon, rect, circle, ellipse');
+      
+      shapes.forEach((shape) => {
+        if (isAvailable) {
+          // Blue for available - using primary color (hsl 217 91% 60%)
+          shape.setAttribute('fill', 'hsl(217, 91%, 60%)');
+          shape.setAttribute('stroke', 'hsl(217, 91%, 50%)');
+        } else {
+          // Grey for not available
+          shape.setAttribute('fill', 'hsl(215, 20%, 35%)');
+          shape.setAttribute('stroke', 'hsl(215, 20%, 30%)');
+        }
+        shape.setAttribute('stroke-width', '1');
+      });
+    });
+
     const style = doc.createElementNS('http://www.w3.org/2000/svg', 'style');
     style.textContent = `
       g[data-section-id] {
@@ -70,18 +90,27 @@ export const InteractiveSVGMap = ({
       }
       g[data-section-id]:hover > path,
       g[data-section-id]:hover > polygon,
-      g[data-section-id]:hover > rect {
-        filter: brightness(1.3);
+      g[data-section-id]:hover > rect,
+      g[data-section-id]:hover > circle,
+      g[data-section-id]:hover > ellipse {
+        filter: brightness(1.25);
       }
       g[data-section-id].selected > path,
       g[data-section-id].selected > polygon,
-      g[data-section-id].selected > rect {
+      g[data-section-id].selected > rect,
+      g[data-section-id].selected > circle,
+      g[data-section-id].selected > ellipse {
         stroke: #0ea5e9 !important;
         stroke-width: 3px !important;
+        filter: brightness(1.3);
       }
       g[data-section-id][data-available="false"] {
-        opacity: 0.4;
         cursor: not-allowed;
+      }
+      g[data-section-id][data-available="false"]:hover > path,
+      g[data-section-id][data-available="false"]:hover > polygon,
+      g[data-section-id][data-available="false"]:hover > rect {
+        filter: none;
       }
     `;
     svg.insertBefore(style, svg.firstChild);
