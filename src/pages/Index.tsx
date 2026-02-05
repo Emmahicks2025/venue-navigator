@@ -1,18 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, TrendingUp, Calendar, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Calendar, Sparkles } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { EventCard } from '@/components/events/EventCard';
 import { CategoryTabs } from '@/components/events/CategoryTabs';
 import { Button } from '@/components/ui/button';
 import { events, getFeaturedEvents, getEventsByCategory, formatPrice } from '@/data/events';
+import { getEventsByCity } from '@/data/eventsData';
+import { useUserLocation } from '@/hooks/useUserLocation';
 import heroImage from '@/assets/hero-stadium.jpg';
 
 const Index = () => {
   const featuredEvents = getFeaturedEvents();
   const [currentSlide, setCurrentSlide] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const { location, loading: locationLoading } = useUserLocation();
+
+  // Get events based on user's city or fallback to all events
+  const localEvents = location?.city ? getEventsByCity(location.city) : [];
+  const upcomingEvents = localEvents.length > 0 ? localEvents.slice(0, 6) : events.slice(0, 6);
+  const hasLocalEvents = localEvents.length > 0;
 
   // Auto-advance carousel
   useEffect(() => {
@@ -30,7 +38,6 @@ const Index = () => {
     }
   };
 
-  const upcomingEvents = events.slice(0, 6);
   const concertEvents = getEventsByCategory('concerts').slice(0, 4);
   const sportsEvents = getEventsByCategory('sports').slice(0, 4);
 
@@ -143,11 +150,21 @@ const Index = () => {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-primary" />
+                {hasLocalEvents ? (
+                  <MapPin className="w-5 h-5 text-primary" />
+                ) : (
+                  <Calendar className="w-5 h-5 text-primary" />
+                )}
               </div>
               <div>
-                <h2 className="font-display text-2xl lg:text-3xl font-bold text-foreground">Upcoming Events</h2>
-                <p className="text-sm text-muted-foreground">Secure your tickets before they sell out</p>
+                <h2 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
+                  {hasLocalEvents ? `Events in ${location?.city}` : 'Upcoming Events'}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {hasLocalEvents 
+                    ? `${localEvents.length} events near you` 
+                    : 'Secure your tickets before they sell out'}
+                </p>
               </div>
             </div>
             <Link to="/events/all">

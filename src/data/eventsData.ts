@@ -2,7 +2,7 @@
 // Events matched to venues with SVG maps use specific maps, others use general map
 
 import { Event } from '@/types';
-import { generateVenueId, hasVenueMap, getOrCreateVenueData } from './venues';
+import { generateVenueId, hasVenueMap, getOrCreateVenueData, venueMetadata } from './venues';
 
 // Performer images by artist/team name (well-known performers)
 const performerImages: Record<string, string> = {
@@ -626,4 +626,16 @@ export function getTotalEventCount(): number {
 // Get unique venues with events
 export function getVenuesWithEvents(): string[] {
   return [...new Set(allEvents.map(e => e.venueName))];
+}
+
+// Get events by city (matches venue city)
+export function getEventsByCity(city: string): Event[] {
+  if (!city) return [];
+  const lowerCity = city.toLowerCase();
+  return allEvents.filter(event => {
+    const venueName = event.venueName;
+    const venueData = venueMetadata[venueName];
+    if (!venueData) return false;
+    return venueData.city.toLowerCase() === lowerCity;
+  });
 }
