@@ -4,6 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { EventCard } from '@/components/events/EventCard';
 import { CategoryTabs } from '@/components/events/CategoryTabs';
+import { TopArtistsSection } from '@/components/home/TopArtistsSection';
 
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
@@ -64,6 +65,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Top Artists */}
+      <TopArtistsSection />
 
 
       {/* Featured Events Carousel */}

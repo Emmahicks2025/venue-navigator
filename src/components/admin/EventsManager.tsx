@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { venueNames } from '@/data/venues';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -242,17 +243,8 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
 
   const [svgMapOpen, setSvgMapOpen] = useState(false);
 
-  const { data: venueMaps } = useQuery({
-    queryKey: ['venue-maps-list'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('venue_maps')
-        .select('venue_name')
-        .order('venue_name');
-      if (error) throw error;
-      return data.map((v) => v.venue_name);
-    },
-  });
+  // Use local venue names (SVG files in public/venue-maps/) as the source
+  const venueMaps = useMemo(() => [...venueNames].sort(), []);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
