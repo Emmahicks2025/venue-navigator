@@ -67,9 +67,10 @@ export const InteractiveSVGMap = ({
         opacity: 0 !important;
       }
       
-      /* Hide text elements that contain common info phrases */
-      text:not([data-section-id] text) {
-        /* Keep section labels visible */
+      /* Hide floating text elements that are not inside section groups */
+      svg > text,
+      svg > g:not([data-section-id]) > text {
+        display: none !important;
       }
 
       g[data-section-id] {
@@ -93,7 +94,31 @@ export const InteractiveSVGMap = ({
       }
     `;
     
-    // Also try to find and remove specific info elements
+    // Remove floating text elements that are not part of interactive sections
+    // This targets standalone text/tspan elements that show section numbers, labels etc.
+    const removeFloatingElements = (parent: Element) => {
+      // Remove text elements not inside data-section-id groups
+      parent.querySelectorAll('text').forEach(textEl => {
+        const parentSection = textEl.closest('g[data-section-id]');
+        if (!parentSection) {
+          // Check if it's a stage label we want to keep
+          const content = textEl.textContent?.toLowerCase() || '';
+          if (!content.includes('stage') && !content.includes('floor') && !content.includes('court')) {
+            textEl.remove();
+          }
+        }
+      });
+      
+      // Remove tspan elements that might be floating
+      parent.querySelectorAll('tspan').forEach(tspan => {
+        const parentSection = tspan.closest('g[data-section-id]');
+        if (!parentSection) {
+          tspan.remove();
+        }
+      });
+    };
+    
+    // Remove info elements and overlays
     const infoSelectors = [
       'foreignObject',
       '[id*="info"]',
@@ -101,15 +126,25 @@ export const InteractiveSVGMap = ({
       '[id*="tooltip"]',
       'g[opacity="0.9"]',
       'rect[fill="#333333"]',
+      '[id*="label"]',
+      '[id*="text"]',
+      '[class*="label"]',
     ];
     
     infoSelectors.forEach(selector => {
       try {
         svg.querySelectorAll(selector).forEach(el => {
-          // Check if it contains "Click a section" text
-          if (el.textContent?.includes('Click a section') || 
-              el.textContent?.includes('see details')) {
-            el.remove();
+          // Check if it's inside a section group - if so, keep it
+          const parentSection = el.closest('g[data-section-id]');
+          if (!parentSection) {
+            // Check if it contains instruction text
+            const text = el.textContent || '';
+            if (text.includes('Click a section') || 
+                text.includes('see details') ||
+                text.match(/^\d+$/) || // Pure numbers
+                text.match(/^[A-Z]\d*$/)) { // Letters like "A", "B1", etc.
+              el.remove();
+            }
           }
         });
       } catch (e) {
@@ -120,10 +155,31 @@ export const InteractiveSVGMap = ({
     // Remove any groups containing the info overlay text
     svg.querySelectorAll('g').forEach(g => {
       const text = g.textContent || '';
+      // Remove instruction overlays
       if (text.includes('Click a section') && text.includes('see details')) {
         g.remove();
+        return;
+      }
+      // Remove groups that only contain floating numbers/labels (not section groups)
+      if (!g.hasAttribute('data-section-id') && !g.querySelector('[data-section-id]')) {
+        const childrenCount = g.children.length;
+        const textCount = g.querySelectorAll('text, tspan').length;
+        // If the group is mostly text elements and not a recognized structure
+        if (childrenCount > 0 && textCount === childrenCount) {
+          const allText = text.trim();
+          // Remove if it's just numbers or short labels
+          if (allText.match(/^[\d\s]+$/) || allText.length < 5) {
+            // Keep groups with structural elements
+            if (!g.querySelector('path, polygon, rect, circle')) {
+              g.remove();
+            }
+          }
+        }
       }
     });
+    
+    // Clean floating text elements
+    removeFloatingElements(svg);
 
     svg.insertBefore(style, svg.firstChild);
 
