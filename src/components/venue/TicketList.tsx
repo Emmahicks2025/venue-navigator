@@ -23,13 +23,14 @@ interface TicketListProps {
   onClose: () => void;
 }
 
-// Generate random unique seat numbers
-const generateRandomSeatNumbers = (count: number, maxSeat: number = 30): number[] => {
-  const seats = new Set<number>();
-  while (seats.size < count) {
-    seats.add(Math.floor(Math.random() * maxSeat) + 1);
-  }
-  return Array.from(seats).sort((a, b) => a - b);
+// Generate consecutive seat numbers starting from a random position
+const generateConsecutiveSeatNumbers = (count: number, maxSeat: number = 30): number[] => {
+  // Pick a random starting seat that allows for consecutive seats
+  const maxStart = Math.max(1, maxSeat - count + 1);
+  const startSeat = Math.floor(Math.random() * maxStart) + 1;
+  
+  // Generate consecutive seats from the starting position
+  return Array.from({ length: count }, (_, i) => startSeat + i);
 };
 
 // Generate mock ticket options for a section
@@ -43,7 +44,7 @@ const generateTicketOptions = (section: VenueSection, svgSection: SVGSection): T
     const rowLetter = String.fromCharCode(65 + i);
     const priceVariation = 1 + (Math.random() * 0.15 - 0.075); // ±7.5% variation
     const ticketCount = Math.floor(Math.random() * 6) + 1; // 1-6 tickets
-    const availableSeats = generateRandomSeatNumbers(ticketCount);
+    const availableSeats = generateConsecutiveSeatNumbers(ticketCount);
     
     options.push({
       id: `${section.id}-${rowLetter}`,
