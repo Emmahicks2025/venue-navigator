@@ -244,12 +244,39 @@ export function getAllVenues(): VenueData[] {
   return venueNames.map(name => getVenueData(name)!).filter(Boolean);
 }
 
-// Check if venue has an SVG map
+// Check if venue has a specific SVG map (not the general one)
 export function hasVenueMap(venueName: string): boolean {
   return venueNames.includes(venueName as VenueName);
 }
 
-// Get SVG path for venue
+// Get SVG path for venue - returns general map if no specific map exists
 export function getVenueSVGPath(venueName: string): string {
-  return `/venue-maps/${venueName}.svg`;
+  if (hasVenueMap(venueName)) {
+    return `/venue-maps/${venueName}.svg`;
+  }
+  return '/venue-maps/_general.svg';
+}
+
+// Get or create venue data for any venue name (including ones without specific maps)
+export function getOrCreateVenueData(name: string, city?: string, state?: string): VenueData {
+  // If we have metadata, use it
+  const existing = venueMetadata[name];
+  if (existing) {
+    return {
+      id: generateVenueId(name),
+      name,
+      ...existing,
+    };
+  }
+  
+  // Create generic venue data
+  return {
+    id: generateVenueId(name),
+    name,
+    city: city || 'Unknown',
+    state: state || '',
+    country: 'USA',
+    type: 'arena',
+    capacity: 10000,
+  };
 }
