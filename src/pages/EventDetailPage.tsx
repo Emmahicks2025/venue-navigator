@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { getEventById, getVenueByName, formatDate, formatTime, formatPrice, getCategoryLabel } from '@/data/events';
 import { useVenueSVG } from '@/hooks/useVenueSVG';
+import { useTicketmasterImage } from '@/hooks/useTicketmasterImage';
 import { getPriceCategory } from '@/lib/svgParser';
 import { SelectedSeat, VenueSection } from '@/types';
 import { toast } from 'sonner';
@@ -24,6 +25,13 @@ const EventDetailPage = () => {
   // Load SVG map for the venue - always call hooks unconditionally
   const { svgContent, sections: svgSections, loading: svgLoading, error: svgError } = useVenueSVG(
     venue?.svgMapId
+  );
+  
+  // Fetch performer image from Ticketmaster if needed
+  const { imageUrl: performerImageUrl } = useTicketmasterImage(
+    event?.performer || '',
+    event?.performerImage,
+    event?.category || 'concerts'
   );
 
   // Convert SVG sections to venue sections format
@@ -82,7 +90,7 @@ const EventDetailPage = () => {
       {/* Hero Banner */}
       <section className="relative h-[40vh] lg:h-[50vh] overflow-hidden">
         <img
-          src={event.performerImage}
+          src={performerImageUrl}
           alt={event.performer}
           className="w-full h-full object-cover"
         />
