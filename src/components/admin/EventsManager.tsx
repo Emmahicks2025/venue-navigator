@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Pencil, Trash2, Search, Calendar, MapPin, DollarSign } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Plus, Pencil, Trash2, Search, Calendar, MapPin, DollarSign, ChevronsUpDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { formatPrice, formatDate } from '@/data/events';
 
@@ -237,6 +240,20 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
     away_team: event?.away_team || '',
   });
 
+  const [svgMapOpen, setSvgMapOpen] = useState(false);
+
+  const { data: venueMaps } = useQuery({
+    queryKey: ['venue-maps-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('venue_maps')
+        .select('venue_name')
+        .order('venue_name');
+      if (error) throw error;
+      return data.map((v) => v.venue_name);
+    },
+  });
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const eventData = {
@@ -392,13 +409,53 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="svg_map_name">SVG Map Name</Label>
-          <Input
-            id="svg_map_name"
-            value={formData.svg_map_name}
-            onChange={(e) => setFormData({ ...formData, svg_map_name: e.target.value })}
-            placeholder="e.g., SoFi Stadium"
-          />
+          <Label>SVG Map Name</Label>
+          <Popover open={svgMapOpen} onOpenChange={setSvgMapOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={svgMapOpen}
+                className="w-full justify-between font-normal"
+              >
+                {formData.svg_map_name || "Select venue map..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[280px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search venue maps..." />
+                <CommandList>
+                  <CommandEmpty>No venue map found.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      value="__none__"
+                      onSelect={() => {
+                        setFormData({ ...formData, svg_map_name: '' });
+                        setSvgMapOpen(false);
+                      }}
+                    >
+                      <Check className={cn("mr-2 h-4 w-4", !formData.svg_map_name ? "opacity-100" : "opacity-0")} />
+                      None
+                    </CommandItem>
+                    {venueMaps?.map((name) => (
+                      <CommandItem
+                        key={name}
+                        value={name}
+                        onSelect={() => {
+                          setFormData({ ...formData, svg_map_name: name });
+                          setSvgMapOpen(false);
+                        }}
+                      >
+                        <Check className={cn("mr-2 h-4 w-4", formData.svg_map_name === name ? "opacity-100" : "opacity-0")} />
+                        {name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
