@@ -16,11 +16,16 @@ export type Database = {
     Tables: {
       world_cup_events: {
         Row: {
+          available_tickets: number | null
+          away_team: string | null
           created_at: string
           event_date: string
           event_time: string | null
+          group_name: string | null
+          home_team: string | null
           id: string
           image_url: string | null
+          match_type: string | null
           max_price: number | null
           min_price: number | null
           name: string
@@ -36,11 +41,16 @@ export type Database = {
           venue_state: string | null
         }
         Insert: {
+          available_tickets?: number | null
+          away_team?: string | null
           created_at?: string
           event_date: string
           event_time?: string | null
+          group_name?: string | null
+          home_team?: string | null
           id?: string
           image_url?: string | null
+          match_type?: string | null
           max_price?: number | null
           min_price?: number | null
           name: string
@@ -56,11 +66,16 @@ export type Database = {
           venue_state?: string | null
         }
         Update: {
+          available_tickets?: number | null
+          away_team?: string | null
           created_at?: string
           event_date?: string
           event_time?: string | null
+          group_name?: string | null
+          home_team?: string | null
           id?: string
           image_url?: string | null
+          match_type?: string | null
           max_price?: number | null
           min_price?: number | null
           name?: string
