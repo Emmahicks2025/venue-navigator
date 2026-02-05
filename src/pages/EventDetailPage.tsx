@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, Calendar, Clock, Share2, Heart, ChevronLeft, Info, Shield, Ticket, Loader2, X } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { InteractiveSVGMap, getAvailableTickets } from '@/components/venue/InteractiveSVGMap';
-import { SeatSelector } from '@/components/venue/SeatSelector';
+import { TicketList } from '@/components/venue/TicketList';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { getEventById, getVenueByName, formatDate, formatTime, formatPrice, getCategoryLabel } from '@/data/events';
@@ -169,12 +169,13 @@ const EventDetailPage = () => {
                 <h2 className="font-display text-xl font-bold text-foreground mb-6">Select Your Seats</h2>
                 
                 {selectedSectionData && selectedSVGSection ? (
-                  <SeatSelector
+                  <TicketList
                     section={{
                       ...selectedSectionData,
                       basePrice: selectedSVGSection.currentPrice,
                     }}
-                    onSeatsSelected={handleSeatsSelected}
+                    svgSection={selectedSVGSection}
+                    onTicketsSelected={handleSeatsSelected}
                     onClose={() => setSelectedSection(null)}
                   />
                 ) : svgLoading ? (
