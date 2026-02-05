@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="stageGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4f46e5;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="floorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d97706;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="lowerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="midGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="upperGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" fill="#1a1a2e"/>
+  
+  <!-- Stage -->
+  <g id="stage" data-section="stage" data-name="Stage" data-price="0" data-available="0">
+    <rect x="250" y="30" width="300" height="80" rx="10" fill="url(#stageGrad)" stroke="#818cf8" stroke-width="2"/>
+    <text x="400" y="75" text-anchor="middle" fill="white" font-size="18" font-weight="bold">STAGE</text>
+  </g>
+  
+  <!-- Floor/GA Section -->
+  <g id="floor" class="section" data-section="floor" data-name="Floor/GA" data-price="150" data-available="500" style="cursor:pointer">
+    <rect x="200" y="130" width="400" height="120" rx="8" fill="url(#floorGrad)" stroke="#fbbf24" stroke-width="2"/>
+    <text x="400" y="185" text-anchor="middle" fill="white" font-size="16" font-weight="bold">FLOOR / GENERAL ADMISSION</text>
+    <text x="400" y="210" text-anchor="middle" fill="white" font-size="12">From $150</text>
+  </g>
+  
+  <!-- Lower Bowl Left -->
+  <g id="lower-left" class="section" data-section="lower-left" data-name="Lower Bowl Left" data-price="120" data-available="300" style="cursor:pointer">
+    <path d="M50 150 L180 150 L180 350 L50 400 Z" rx="8" fill="url(#lowerGrad)" stroke="#34d399" stroke-width="2"/>
+    <text x="115" y="275" text-anchor="middle" fill="white" font-size="14" font-weight="bold" transform="rotate(-10, 115, 275)">LOWER</text>
+    <text x="115" y="295" text-anchor="middle" fill="white" font-size="10" transform="rotate(-10, 115, 295)">From $120</text>
+  </g>
+  
+  <!-- Lower Bowl Right -->
+  <g id="lower-right" class="section" data-section="lower-right" data-name="Lower Bowl Right" data-price="120" data-available="300" style="cursor:pointer">
+    <path d="M620 150 L750 150 L750 400 L620 350 Z" rx="8" fill="url(#lowerGrad)" stroke="#34d399" stroke-width="2"/>
+    <text x="685" y="275" text-anchor="middle" fill="white" font-size="14" font-weight="bold" transform="rotate(10, 685, 275)">LOWER</text>
+    <text x="685" y="295" text-anchor="middle" fill="white" font-size="10" transform="rotate(10, 685, 295)">From $120</text>
+  </g>
+  
+  <!-- Lower Bowl Center -->
+  <g id="lower-center" class="section" data-section="lower-center" data-name="Lower Bowl Center" data-price="100" data-available="400" style="cursor:pointer">
+    <rect x="200" y="270" width="400" height="100" rx="8" fill="url(#lowerGrad)" stroke="#34d399" stroke-width="2"/>
+    <text x="400" y="315" text-anchor="middle" fill="white" font-size="16" font-weight="bold">LOWER BOWL CENTER</text>
+    <text x="400" y="340" text-anchor="middle" fill="white" font-size="12">From $100</text>
+  </g>
+  
+  <!-- Mid Level Left -->
+  <g id="mid-left" class="section" data-section="mid-left" data-name="Mid Level Left" data-price="80" data-available="250" style="cursor:pointer">
+    <path d="M20 420 L170 380 L170 480 L20 530 Z" fill="url(#midGrad)" stroke="#60a5fa" stroke-width="2"/>
+    <text x="95" y="455" text-anchor="middle" fill="white" font-size="12" font-weight="bold">MID LEFT</text>
+    <text x="95" y="475" text-anchor="middle" fill="white" font-size="10">From $80</text>
+  </g>
+  
+  <!-- Mid Level Right -->
+  <g id="mid-right" class="section" data-section="mid-right" data-name="Mid Level Right" data-price="80" data-available="250" style="cursor:pointer">
+    <path d="M630 380 L780 420 L780 530 L630 480 Z" fill="url(#midGrad)" stroke="#60a5fa" stroke-width="2"/>
+    <text x="705" y="455" text-anchor="middle" fill="white" font-size="12" font-weight="bold">MID RIGHT</text>
+    <text x="705" y="475" text-anchor="middle" fill="white" font-size="10">From $80</text>
+  </g>
+  
+  <!-- Mid Level Center -->
+  <g id="mid-center" class="section" data-section="mid-center" data-name="Mid Level Center" data-price="75" data-available="350" style="cursor:pointer">
+    <rect x="190" y="390" width="420" height="80" rx="8" fill="url(#midGrad)" stroke="#60a5fa" stroke-width="2"/>
+    <text x="400" y="430" text-anchor="middle" fill="white" font-size="14" font-weight="bold">MID LEVEL CENTER</text>
+    <text x="400" y="450" text-anchor="middle" fill="white" font-size="11">From $75</text>
+  </g>
+  
+  <!-- Upper Level -->
+  <g id="upper" class="section" data-section="upper" data-name="Upper Level" data-price="45" data-available="600" style="cursor:pointer">
+    <rect x="150" y="490" width="500" height="70" rx="8" fill="url(#upperGrad)" stroke="#a78bfa" stroke-width="2"/>
+    <text x="400" y="525" text-anchor="middle" fill="white" font-size="14" font-weight="bold">UPPER LEVEL</text>
+    <text x="400" y="545" text-anchor="middle" fill="white" font-size="11">From $45</text>
+  </g>
+  
+  <!-- Upper Corners -->
+  <g id="upper-left" class="section" data-section="upper-left" data-name="Upper Corner Left" data-price="35" data-available="200" style="cursor:pointer">
+    <path d="M20 540 L130 500 L130 570 L20 580 Z" fill="url(#upperGrad)" stroke="#a78bfa" stroke-width="2"/>
+    <text x="75" y="545" text-anchor="middle" fill="white" font-size="10">$35</text>
+  </g>
+  
+  <g id="upper-right" class="section" data-section="upper-right" data-name="Upper Corner Right" data-price="35" data-available="200" style="cursor:pointer">
+    <path d="M670 500 L780 540 L780 580 L670 570 Z" fill="url(#upperGrad)" stroke="#a78bfa" stroke-width="2"/>
+    <text x="725" y="545" text-anchor="middle" fill="white" font-size="10">$35</text>
+  </g>
+</svg>
