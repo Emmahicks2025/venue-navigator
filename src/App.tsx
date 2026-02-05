@@ -12,6 +12,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
 import SearchPage from "./pages/SearchPage";
 import AdminPage from "./pages/AdminPage";
+import DbEventDetailPage from "./pages/DbEventDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/events/:category" element={<EventsPage />} />
             <Route path="/event/:id" element={<EventDetailPage />} />
+            <Route path="/match/:id" element={<DbEventDetailPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/order-success" element={<OrderSuccessPage />} />
