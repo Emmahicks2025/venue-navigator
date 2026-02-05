@@ -41,11 +41,11 @@ export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) =
       
       {/* World Cup 2026 Special Tab */}
       <Link
-        to="/events/sports?search=world%20cup"
+        to="/events/world-cup"
         className="flex items-center gap-1.5 px-3 py-2 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
       >
         <Trophy className="w-3.5 h-3.5 text-yellow-400" />
-        World Cup
+        FIFA World Cup
       </Link>
       
       {categoryConfig.slice(2).map(({ id, icon: Icon, color }) => {

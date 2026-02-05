@@ -13,6 +13,7 @@ import OrderSuccessPage from "./pages/OrderSuccessPage";
 import SearchPage from "./pages/SearchPage";
 import AdminPage from "./pages/AdminPage";
 import DbEventDetailPage from "./pages/DbEventDetailPage";
+import WorldCupPage from "./pages/WorldCupPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/events/world-cup" element={<WorldCupPage />} />
             <Route path="/events/:category" element={<EventsPage />} />
             <Route path="/event/:id" element={<EventDetailPage />} />
             <Route path="/match/:id" element={<DbEventDetailPage />} />
