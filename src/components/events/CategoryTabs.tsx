@@ -42,10 +42,10 @@ export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) =
       {/* World Cup 2026 Special Tab */}
       <Link
         to="/events/sports?search=world%20cup"
-        className="flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 bg-gradient-to-r from-emerald-600 to-teal-600 text-white border border-yellow-500/50 shadow-md shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-105"
+        className="flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 bg-gradient-to-r from-emerald-600 to-teal-600 text-white border border-yellow-500/50"
       >
         <Trophy className="w-4 h-4 text-yellow-400" />
-        <span>World Cup 2026</span>
+        World Cup
       </Link>
       
       {categoryConfig.slice(2).map(({ id, icon: Icon, color }) => {
