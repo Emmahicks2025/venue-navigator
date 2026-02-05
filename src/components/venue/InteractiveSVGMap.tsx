@@ -55,6 +55,23 @@ export const InteractiveSVGMap = ({
     // Add styling for sections
     const style = doc.createElementNS('http://www.w3.org/2000/svg', 'style');
     style.textContent = `
+      /* Hide embedded info boxes, overlays, and instructions from SVG */
+      .info-box, .venue-info, .title-group, .overlay-info,
+      [id*="info-box"], [id*="info_box"], [id*="infobox"],
+      [id*="overlay"], [id*="tooltip"], [id*="instructions"],
+      [class*="info-box"], [class*="overlay"], [class*="tooltip"],
+      foreignObject, .foreignObject,
+      [data-info], [data-overlay] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+      }
+      
+      /* Hide text elements that contain common info phrases */
+      text:not([data-section-id] text) {
+        /* Keep section labels visible */
+      }
+
       g[data-section-id] {
         cursor: pointer;
         transition: all 0.2s ease;
@@ -75,6 +92,39 @@ export const InteractiveSVGMap = ({
         cursor: not-allowed;
       }
     `;
+    
+    // Also try to find and remove specific info elements
+    const infoSelectors = [
+      'foreignObject',
+      '[id*="info"]',
+      '[id*="overlay"]',
+      '[id*="tooltip"]',
+      'g[opacity="0.9"]',
+      'rect[fill="#333333"]',
+    ];
+    
+    infoSelectors.forEach(selector => {
+      try {
+        svg.querySelectorAll(selector).forEach(el => {
+          // Check if it contains "Click a section" text
+          if (el.textContent?.includes('Click a section') || 
+              el.textContent?.includes('see details')) {
+            el.remove();
+          }
+        });
+      } catch (e) {
+        // Selector might be invalid, continue
+      }
+    });
+    
+    // Remove any groups containing the info overlay text
+    svg.querySelectorAll('g').forEach(g => {
+      const text = g.textContent || '';
+      if (text.includes('Click a section') && text.includes('see details')) {
+        g.remove();
+      }
+    });
+
     svg.insertBefore(style, svg.firstChild);
 
     return new XMLSerializer().serializeToString(doc);
