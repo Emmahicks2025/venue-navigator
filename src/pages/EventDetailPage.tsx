@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, Share2, Heart, ChevronLeft, Info, Shield, Ticket, Loader2 } from 'lucide-react';
+import { MapPin, Calendar, Clock, Share2, Heart, ChevronLeft, Info, Shield, Ticket, Loader2, X } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { InteractiveSVGMap } from '@/components/venue/InteractiveSVGMap';
+import { InteractiveSVGMap, getAvailableTickets } from '@/components/venue/InteractiveSVGMap';
 import { SeatSelector } from '@/components/venue/SeatSelector';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
@@ -210,39 +210,80 @@ const EventDetailPage = () => {
 
             {/* Sidebar */}
             <div className="space-y-4">
-              {/* Pricing Summary */}
+              {/* Ticket Info Panel */}
               <div className="bg-card border border-border rounded-2xl p-6 sticky top-24">
-                <h3 className="font-display text-lg font-bold text-foreground mb-4">Ticket Prices</h3>
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                  {topSections.length > 0 ? (
-                    topSections.map((section) => (
-                      <button
-                        key={section.id}
-                        onClick={() => setSelectedSection(section.id)}
-                        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${
-                          selectedSection === section.id
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-primary/50 hover:bg-secondary/50'
-                        }`}
+                {selectedSVGSection ? (
+                  <>
+                    {/* Selected Section Tickets */}
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-display text-lg font-bold text-foreground">
+                        {selectedSVGSection.name}
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSelectedSection(null)}
+                        className="h-8 w-8"
                       >
-                        <div className="text-left">
-                          <p className="font-medium text-foreground text-sm">{section.name}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{section.priceCategory}</p>
-                        </div>
-                        <p className="font-bold text-accent">{formatPrice(section.basePrice)}</p>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="text-center py-4">
-                      <p className="text-sm text-muted-foreground">Loading sections...</p>
+                        <X className="w-4 h-4" />
+                      </Button>
                     </div>
-                  )}
-                </div>
+                    
+                    <div className="bg-secondary/50 rounded-xl p-4 mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-muted-foreground">Price per ticket</span>
+                        <span className="text-xl font-bold text-accent">
+                          {formatPrice(selectedSVGSection.currentPrice)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Available tickets</span>
+                        <span className="text-sm font-medium text-success">
+                          {getAvailableTickets(selectedSVGSection)} available
+                        </span>
+                      </div>
+                    </div>
 
-                {venueSections.length > 8 && (
-                  <p className="text-xs text-muted-foreground text-center mt-3">
-                    + {venueSections.length - 8} more sections available on map
-                  </p>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Ticket className="w-4 h-4 text-primary" />
+                        <span>{selectedSVGSection.rows} rows × {selectedSVGSection.seatsPerRow} seats per row</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Info className="w-4 h-4 text-accent" />
+                        <span className="capitalize">{getPriceCategory(selectedSVGSection.currentPrice, 
+                          Math.min(...svgSections.map(s => s.currentPrice)),
+                          Math.max(...svgSections.map(s => s.currentPrice))
+                        )} tier section</span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Click "Select Seats" to choose specific seats in this section
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="font-display text-lg font-bold text-foreground mb-4">
+                      Select a Section
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Click on a section in the venue map to see available tickets and pricing.
+                    </p>
+                    
+                    <div className="bg-secondary/50 rounded-xl p-4 mb-4">
+                      <p className="text-sm font-medium text-foreground mb-2">Price Range</p>
+                      <p className="text-xl font-bold text-accent">
+                        {venueSections.length > 0 
+                          ? `${formatPrice(Math.min(...venueSections.map(s => s.basePrice)))} - ${formatPrice(Math.max(...venueSections.map(s => s.basePrice)))}`
+                          : 'Loading...'}
+                      </p>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      {venueSections.length} sections available
+                    </p>
+                  </>
                 )}
 
                 <div className="mt-6 pt-6 border-t border-border space-y-3">
