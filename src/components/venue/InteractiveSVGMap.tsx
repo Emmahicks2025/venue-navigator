@@ -3,6 +3,14 @@ import { SVGSection } from '@/lib/svgParser';
 import { formatPrice } from '@/data/events';
 import { cn } from '@/lib/utils';
 
+// Calculate available tickets for a section (mock - based on section data)
+export const getAvailableTickets = (section: SVGSection): number => {
+  const totalSeats = section.rows * section.seatsPerRow;
+  // Mock availability: 60-95% of seats available based on price (higher price = fewer available)
+  const availabilityRate = 0.6 + (Math.random() * 0.35);
+  return Math.floor(totalSeats * availabilityRate);
+};
+
 interface InteractiveSVGMapProps {
   svgContent: string;
   sections: SVGSection[];
@@ -186,7 +194,7 @@ export const InteractiveSVGMap = ({
             {hoveredData.name}
           </p>
           <p className="text-xs text-muted-foreground mb-1">
-            {hoveredData.rows} rows × {hoveredData.seatsPerRow} seats
+            {getAvailableTickets(hoveredData)} tickets available
           </p>
           <p className="text-accent font-bold">
             {formatPrice(hoveredData.currentPrice)}
