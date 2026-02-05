@@ -46,57 +46,12 @@ function getBestImage(images: TicketmasterImage[]): string | null {
   return sorted[0]?.url || null;
 }
 
-// Fetch image from Ticketmaster API
+// Fetch image from Ticketmaster API - DISABLED to prevent rate limiting
+// Use backend edge function instead for fetching images
 async function fetchTicketmasterImage(searchTerm: string): Promise<string | null> {
-  // Check cache first
-  const cacheKey = searchTerm.toLowerCase().trim();
-  if (cacheKey in imageCache) {
-    return imageCache[cacheKey];
-  }
-
-  try {
-    // First try searching for attractions (artists, teams, etc.)
-    const attractionUrl = `${DISCOVERY_API_URL}/attractions.json?apikey=${TICKETMASTER_API_KEY}&keyword=${encodeURIComponent(searchTerm)}&size=1`;
-    const attractionResponse = await fetch(attractionUrl);
-    
-    if (attractionResponse.ok) {
-      const data: TicketmasterResponse = await attractionResponse.json();
-      const attraction = data._embedded?.attractions?.[0];
-      
-      if (attraction?.images) {
-        const imageUrl = getBestImage(attraction.images);
-        if (imageUrl) {
-          imageCache[cacheKey] = imageUrl;
-          return imageUrl;
-        }
-      }
-    }
-
-    // If no attraction found, try searching events
-    const eventUrl = `${DISCOVERY_API_URL}/events.json?apikey=${TICKETMASTER_API_KEY}&keyword=${encodeURIComponent(searchTerm)}&size=1`;
-    const eventResponse = await fetch(eventUrl);
-    
-    if (eventResponse.ok) {
-      const data: TicketmasterResponse = await eventResponse.json();
-      const event = data._embedded?.events?.[0];
-      
-      if (event?.images) {
-        const imageUrl = getBestImage(event.images);
-        if (imageUrl) {
-          imageCache[cacheKey] = imageUrl;
-          return imageUrl;
-        }
-      }
-    }
-
-    // No image found
-    imageCache[cacheKey] = null;
-    return null;
-  } catch (error) {
-    console.error('Error fetching Ticketmaster image:', error);
-    imageCache[cacheKey] = null;
-    return null;
-  }
+  // DISABLED: Direct API calls from frontend cause rate limiting issues
+  // All Ticketmaster data should be fetched via backend edge function
+  return null;
 }
 
 // Hook to get performer image with Ticketmaster fallback
