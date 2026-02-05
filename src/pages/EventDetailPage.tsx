@@ -2,16 +2,16 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, Calendar, Clock, Share2, Heart, ChevronLeft, Info, Shield, Ticket, Loader2, X } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { InteractiveSVGMap, getAvailableTickets } from '@/components/venue/InteractiveSVGMap';
+import { InteractiveSVGMap } from '@/components/venue/InteractiveSVGMap';
 import { TicketList } from '@/components/venue/TicketList';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { getEventById, getVenueByName, formatDate, formatTime, formatPrice, getCategoryLabel } from '@/data/events';
 import { useVenueSVG } from '@/hooks/useVenueSVG';
 import { useTicketmasterImage } from '@/hooks/useTicketmasterImage';
-import { getPriceCategory } from '@/lib/svgParser';
 import { SelectedSeat, VenueSection } from '@/types';
 import { toast } from 'sonner';
+import { getPriceCategory } from '@/lib/svgParser';
 
 const EventDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -172,8 +172,45 @@ const EventDetailPage = () => {
                 </div>
               </div>
 
-              {/* Venue Map or Ticket List */}
+              {/* Venue Map - Always Visible */}
+              <div className="bg-card border border-border rounded-2xl p-6 lg:p-8">
+                <h2 className="font-display text-xl font-bold text-foreground mb-6">Select Your Seats</h2>
+                
+                {svgLoading ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+                    <p className="text-muted-foreground">Loading venue map...</p>
+                  </div>
+                ) : svgError || !svgContent ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground mb-4">
+                      Interactive venue map not available for this venue.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Please select a section from the pricing panel.
+                    </p>
+                  </div>
+                ) : (
+                  <InteractiveSVGMap
+                    svgContent={svgContent}
+                    sections={svgSections}
+                    selectedSection={selectedSection}
+                    onSectionSelect={setSelectedSection}
+                  />
+                )}
+              </div>
+
+              {/* Description */}
+              <div className="bg-card border border-border rounded-2xl p-6 lg:p-8">
+                <h2 className="font-display text-xl font-bold text-foreground mb-4">About This Event</h2>
+                <p className="text-muted-foreground leading-relaxed">{event.description}</p>
+              </div>
+            </div>
+
+            {/* Sidebar - Ticket List or Section Info */}
+            <div className="space-y-4">
               {selectedSectionData && selectedSVGSection ? (
+                /* Ticket List in Sidebar */
                 <TicketList
                   section={{
                     ...selectedSectionData,
@@ -184,134 +221,44 @@ const EventDetailPage = () => {
                   onClose={() => setSelectedSection(null)}
                 />
               ) : (
-                <div className="bg-card border border-border rounded-2xl p-6 lg:p-8">
-                  <h2 className="font-display text-xl font-bold text-foreground mb-6">Select Your Seats</h2>
+                /* Default Section Selection Panel */
+                <div className="bg-card border border-border rounded-2xl p-6 sticky top-24">
+                  <h3 className="font-display text-lg font-bold text-foreground mb-4">
+                    Select a Section
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Click on a section in the venue map to see available tickets and pricing.
+                  </p>
                   
-                  {svgLoading ? (
-                    <div className="flex flex-col items-center justify-center py-16">
-                      <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-                      <p className="text-muted-foreground">Loading venue map...</p>
+                  <div className="bg-secondary/50 rounded-xl p-4 mb-4">
+                    <p className="text-sm font-medium text-foreground mb-2">Price Range</p>
+                    <p className="text-xl font-bold text-accent">
+                      {venueSections.length > 0 
+                        ? `${formatPrice(Math.min(...venueSections.map(s => s.basePrice)))} - ${formatPrice(Math.max(...venueSections.map(s => s.basePrice)))}`
+                        : 'Loading...'}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground mb-6">
+                    {venueSections.length} sections available
+                  </p>
+
+                  <div className="pt-6 border-t border-border space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Shield className="w-4 h-4 text-success" />
+                      <span>100% Buyer Guarantee</span>
                     </div>
-                  ) : svgError || !svgContent ? (
-                    <div className="text-center py-12">
-                      <p className="text-muted-foreground mb-4">
-                        Interactive venue map not available for this venue.
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Please select a section from the pricing panel.
-                      </p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Ticket className="w-4 h-4 text-primary" />
+                      <span>Mobile Tickets Available</span>
                     </div>
-                  ) : (
-                    <InteractiveSVGMap
-                      svgContent={svgContent}
-                      sections={svgSections}
-                      selectedSection={selectedSection}
-                      onSectionSelect={setSelectedSection}
-                    />
-                  )}
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Info className="w-4 h-4 text-accent" />
+                      <span>Instant Confirmation</span>
+                    </div>
+                  </div>
                 </div>
               )}
-
-              {/* Description */}
-              <div className="bg-card border border-border rounded-2xl p-6 lg:p-8">
-                <h2 className="font-display text-xl font-bold text-foreground mb-4">About This Event</h2>
-                <p className="text-muted-foreground leading-relaxed">{event.description}</p>
-              </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-4">
-              {/* Ticket Info Panel */}
-              <div className="bg-card border border-border rounded-2xl p-6 sticky top-24">
-                {selectedSVGSection ? (
-                  <>
-                    {/* Selected Section Tickets */}
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-display text-lg font-bold text-foreground">
-                        {selectedSVGSection.name}
-                      </h3>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSelectedSection(null)}
-                        className="h-8 w-8"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="bg-secondary/50 rounded-xl p-4 mb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-muted-foreground">Price per ticket</span>
-                        <span className="text-xl font-bold text-accent">
-                          {formatPrice(selectedSVGSection.currentPrice)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Available tickets</span>
-                        <span className="text-sm font-medium text-success">
-                          {getAvailableTickets(selectedSVGSection)} available
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Ticket className="w-4 h-4 text-primary" />
-                        <span>{selectedSVGSection.rows} rows × {selectedSVGSection.seatsPerRow} seats per row</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Info className="w-4 h-4 text-accent" />
-                        <span className="capitalize">{getPriceCategory(selectedSVGSection.currentPrice, 
-                          Math.min(...svgSections.map(s => s.currentPrice)),
-                          Math.max(...svgSections.map(s => s.currentPrice))
-                        )} tier section</span>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-muted-foreground mb-4">
-                      Click "Select Seats" to choose specific seats in this section
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h3 className="font-display text-lg font-bold text-foreground mb-4">
-                      Select a Section
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-6">
-                      Click on a section in the venue map to see available tickets and pricing.
-                    </p>
-                    
-                    <div className="bg-secondary/50 rounded-xl p-4 mb-4">
-                      <p className="text-sm font-medium text-foreground mb-2">Price Range</p>
-                      <p className="text-xl font-bold text-accent">
-                        {venueSections.length > 0 
-                          ? `${formatPrice(Math.min(...venueSections.map(s => s.basePrice)))} - ${formatPrice(Math.max(...venueSections.map(s => s.basePrice)))}`
-                          : 'Loading...'}
-                      </p>
-                    </div>
-
-                    <p className="text-xs text-muted-foreground">
-                      {venueSections.length} sections available
-                    </p>
-                  </>
-                )}
-
-                <div className="mt-6 pt-6 border-t border-border space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Shield className="w-4 h-4 text-success" />
-                    <span>100% Buyer Guarantee</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Ticket className="w-4 h-4 text-primary" />
-                    <span>Mobile Tickets Available</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Info className="w-4 h-4 text-accent" />
-                    <span>Instant Confirmation</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
