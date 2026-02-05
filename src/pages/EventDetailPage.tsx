@@ -73,7 +73,7 @@ const EventDetailPage = () => {
   const selectedSectionData = venueSections.find(s => s.id === selectedSection);
   const selectedSVGSection = svgSections.find(s => s.id === selectedSection);
 
-  const handleSeatsSelected = (seats: SelectedSeat[]) => {
+  const handleSeatsSelected = (seats: SelectedSeat[], goToCheckout: boolean = false) => {
     addToCart({
       eventId: event.id,
       eventName: event.name,
@@ -83,6 +83,10 @@ const EventDetailPage = () => {
     });
     toast.success(`${seats.length} ticket${seats.length > 1 ? 's' : ''} added to cart!`);
     setSelectedSection(null);
+    
+    if (goToCheckout) {
+      navigate('/checkout');
+    }
   };
 
   return (
