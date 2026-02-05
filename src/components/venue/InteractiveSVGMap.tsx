@@ -18,6 +18,42 @@ interface InteractiveSVGMapProps {
   onSectionSelect: (sectionId: string) => void;
 }
 
+type SectionLabel = {
+  sectionId: string;
+  label: string;
+  x: number;
+  y: number;
+  fontSize: number;
+};
+
+// Get a short display label from section ID
+const getShortLabel = (sectionId: string): string => {
+  let label = sectionId
+    .replace(/^(SECTION[-_]?|SEC[-_]?|ZONE[-_]?)/i, '')
+    .replace(/[-_]GROUP$/i, '')
+    .replace(/[-_]/g, ' ')
+    .trim();
+
+  if (!label) return sectionId;
+
+  // Just a number
+  if (/^\d+$/.test(label)) return label;
+
+  // Letter+number (A1, B12)
+  if (/^[A-Z]\d+$/i.test(label)) return label.toUpperCase();
+
+  // Shorten long names
+  const parts = label.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return label.substring(0, 5).toUpperCase();
+
+  let result = '';
+  for (const part of parts) {
+    if (/^\d+$/.test(part)) result += part;
+    else result += part[0];
+  }
+  return result.toUpperCase();
+};
+
 export const InteractiveSVGMap = ({
   svgContent,
   sections,
@@ -27,17 +63,17 @@ export const InteractiveSVGMap = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [labels, setLabels] = useState<SectionLabel[]>([]);
 
   // Create a section lookup map
   const sectionMap = new Map(sections.map(s => [s.id, s]));
 
-  // Process SVG content to add our styles
+  // Process SVG content to remove embedded overlays/text and add consistent section styles
   const processedSVG = useCallback(() => {
-    // Parse the SVG
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgContent, 'image/svg+xml');
     const svg = doc.querySelector('svg');
-    
+
     if (!svg) return svgContent;
 
     // Add viewBox if missing for responsiveness
@@ -52,7 +88,6 @@ export const InteractiveSVGMap = ({
     svg.setAttribute('height', '100%');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-    // Add styling for sections
     const style = doc.createElementNS('http://www.w3.org/2000/svg', 'style');
     style.textContent = `
       g[data-section-id] {
@@ -74,181 +109,88 @@ export const InteractiveSVGMap = ({
         opacity: 0.4;
         cursor: not-allowed;
       }
-      .section-label {
-        pointer-events: none;
-        font-family: system-ui, -apple-system, sans-serif;
-        font-weight: 700;
-        fill: white;
-        text-anchor: middle;
-        dominant-baseline: central;
-        stroke: rgba(0,0,0,0.8);
-        stroke-width: 3px;
-        paint-order: stroke fill;
-      }
     `;
-    
-    // AGGRESSIVE REMOVAL: Remove ALL text elements
-    svg.querySelectorAll('text, tspan').forEach(textEl => {
-      textEl.remove();
-    });
-    
+
+    // Remove *all* text (we'll render labels as an overlay for consistent sizing/position)
+    svg.querySelectorAll('text, tspan').forEach(el => el.remove());
+
     // Remove foreignObject elements (often contain overlays)
     svg.querySelectorAll('foreignObject').forEach(el => el.remove());
-    
-    // Remove any groups with info/overlay in id or class
-    svg.querySelectorAll('[id*="info"], [id*="overlay"], [id*="tooltip"], [class*="info"], [class*="overlay"]').forEach(el => {
-      if (!el.closest('g[data-section-id]')) {
-        el.remove();
-      }
-    });
 
-    // Add section labels programmatically
-    svg.querySelectorAll('g[data-section-id]').forEach(sectionGroup => {
-      const sectionId = sectionGroup.getAttribute('data-section-id') || '';
-      
-      // Get the bounding box of the section's shape
-      const shape = sectionGroup.querySelector('path, polygon, rect, circle, ellipse');
-      if (!shape) return;
-      
-      // Get bounding box from the shape
-      let cx = 0, cy = 0, width = 0, height = 0;
-      
-      if (shape.tagName === 'rect') {
-        const x = parseFloat(shape.getAttribute('x') || '0');
-        const y = parseFloat(shape.getAttribute('y') || '0');
-        width = parseFloat(shape.getAttribute('width') || '0');
-        height = parseFloat(shape.getAttribute('height') || '0');
-        cx = x + width / 2;
-        cy = y + height / 2;
-      } else if (shape.tagName === 'circle') {
-        cx = parseFloat(shape.getAttribute('cx') || '0');
-        cy = parseFloat(shape.getAttribute('cy') || '0');
-        const r = parseFloat(shape.getAttribute('r') || '0');
-        width = height = r * 2;
-      } else if (shape.tagName === 'ellipse') {
-        cx = parseFloat(shape.getAttribute('cx') || '0');
-        cy = parseFloat(shape.getAttribute('cy') || '0');
-        width = parseFloat(shape.getAttribute('rx') || '0') * 2;
-        height = parseFloat(shape.getAttribute('ry') || '0') * 2;
-      } else {
-        // For path/polygon, try to get bounds from d attribute or points
-        const bbox = getPathBounds(shape);
-        cx = bbox.cx;
-        cy = bbox.cy;
-        width = bbox.width;
-        height = bbox.height;
-      }
-      
-      // Calculate font size based on section size (larger with min/max constraints)
-      const minDimension = Math.min(width, height);
-      let fontSize = Math.max(8, Math.min(18, minDimension * 0.45));
-      
-      // Get a short label for the section
-      const label = getShortLabel(sectionId);
-      
-      // Adjust font size for longer labels
-      if (label.length > 4) {
-        fontSize = fontSize * 0.8;
-      }
-      if (label.length > 6) {
-        fontSize = fontSize * 0.8;
-      }
-      
-      // Create the text element
-      const text = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('class', 'section-label');
-      text.setAttribute('x', String(cx));
-      text.setAttribute('y', String(cy));
-      text.setAttribute('font-size', String(fontSize));
-      text.textContent = label;
-      
-      sectionGroup.appendChild(text);
-    });
+    // Remove common overlay/info containers
+    svg
+      .querySelectorAll(
+        '[id*="info"], [id*="overlay"], [id*="tooltip"], [class*="info"], [class*="overlay"], [class*="tooltip"]'
+      )
+      .forEach(el => {
+        if (!el.closest('g[data-section-id]')) el.remove();
+      });
 
     svg.insertBefore(style, svg.firstChild);
 
     return new XMLSerializer().serializeToString(doc);
   }, [svgContent]);
-  
-  // Helper function to get bounds of path/polygon elements
-  const getPathBounds = (shape: Element): { cx: number; cy: number; width: number; height: number } => {
-    let points: { x: number; y: number }[] = [];
-    
-    if (shape.tagName === 'polygon') {
-      const pointsAttr = shape.getAttribute('points') || '';
-      const pairs = pointsAttr.trim().split(/[\s,]+/);
-      for (let i = 0; i < pairs.length - 1; i += 2) {
-        points.push({ x: parseFloat(pairs[i]), y: parseFloat(pairs[i + 1]) });
-      }
-    } else if (shape.tagName === 'path') {
-      // Extract numbers from path d attribute for rough bounds
-      const d = shape.getAttribute('d') || '';
-      const numbers = d.match(/-?\d+\.?\d*/g) || [];
-      for (let i = 0; i < numbers.length - 1; i += 2) {
-        const x = parseFloat(numbers[i]);
-        const y = parseFloat(numbers[i + 1]);
-        if (!isNaN(x) && !isNaN(y)) {
-          points.push({ x, y });
+
+  // Compute label positions from the *rendered* SVG so they stay aligned across maps
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let raf = 0;
+    let ro: ResizeObserver | null = null;
+
+    const compute = () => {
+      const svg = container.querySelector('svg') as SVGSVGElement | null;
+      if (!svg) return;
+
+      const next: SectionLabel[] = [];
+      const sectionGroups = svg.querySelectorAll('g[data-section-id]');
+
+      sectionGroups.forEach(group => {
+        const sectionId = group.getAttribute('data-section-id') || '';
+        if (!sectionId) return;
+
+        // getBBox gives us the geometry bounds in SVG user units.
+        // This is reliable for centering labels (unlike parsing path data).
+        let bbox: DOMRect;
+        try {
+          bbox = (group as unknown as SVGGElement).getBBox();
+        } catch {
+          return;
         }
-      }
-    }
-    
-    if (points.length === 0) {
-      return { cx: 0, cy: 0, width: 50, height: 50 };
-    }
-    
-    const xs = points.map(p => p.x);
-    const ys = points.map(p => p.y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-    
-    return {
-      cx: (minX + maxX) / 2,
-      cy: (minY + maxY) / 2,
-      width: maxX - minX,
-      height: maxY - minY,
+
+        if (!isFinite(bbox.x) || !isFinite(bbox.y) || bbox.width <= 1 || bbox.height <= 1) return;
+
+        const cx = bbox.x + bbox.width / 2;
+        const cy = bbox.y + bbox.height / 2;
+
+        const minDim = Math.min(bbox.width, bbox.height);
+        // A stable clamp that avoids huge/small swings across venues
+        let fontSize = Math.max(10, Math.min(18, minDim * 0.22));
+
+        const label = getShortLabel(sectionId);
+        if (label.length > 4) fontSize *= 0.9;
+        if (label.length > 6) fontSize *= 0.85;
+
+        next.push({ sectionId, label, x: cx, y: cy, fontSize });
+      });
+
+      setLabels(next);
     };
-  };
-  
-  // Get a short display label from section ID
-  const getShortLabel = (sectionId: string): string => {
-    // Remove common prefixes
-    let label = sectionId
-      .replace(/^(SECTION[-_]?|SEC[-_]?|ZONE[-_]?)/i, '')
-      .replace(/[-_]GROUP$/i, '')
-      .replace(/[-_]/g, ' ')
-      .trim();
-    
-    // If it's just a number, return it
-    if (/^\d+$/.test(label)) {
-      return label;
-    }
-    
-    // If it's a letter+number combo (like A1, B2), return it
-    if (/^[A-Z]\d+$/i.test(label)) {
-      return label.toUpperCase();
-    }
-    
-    // For longer names, abbreviate
-    const parts = label.split(/\s+/);
-    if (parts.length === 1) {
-      // Single word - take first 4 chars
-      return label.substring(0, 4).toUpperCase();
-    }
-    
-    // Multiple words - take initials + numbers
-    let result = '';
-    for (const part of parts) {
-      if (/^\d+$/.test(part)) {
-        result += part;
-      } else {
-        result += part[0];
-      }
-    }
-    return result.toUpperCase();
-  };
+
+    raf = window.requestAnimationFrame(compute);
+
+    ro = new ResizeObserver(() => {
+      window.cancelAnimationFrame(raf);
+      raf = window.requestAnimationFrame(compute);
+    });
+    ro.observe(container);
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+      ro?.disconnect();
+    };
+  }, [svgContent, sections]);
 
   // Handle section interactions
   useEffect(() => {
@@ -258,11 +200,11 @@ export const InteractiveSVGMap = ({
     const handleClick = (e: MouseEvent) => {
       const target = e.target as Element;
       const sectionGroup = target.closest('g[data-section-id]');
-      
+
       if (sectionGroup) {
         const sectionId = sectionGroup.getAttribute('data-section-id');
         const available = sectionGroup.getAttribute('data-available') !== 'false';
-        
+
         if (sectionId && available) {
           onSectionSelect(sectionId);
         }
@@ -272,12 +214,11 @@ export const InteractiveSVGMap = ({
     const handleMouseMove = (e: MouseEvent) => {
       const target = e.target as Element;
       const sectionGroup = target.closest('g[data-section-id]');
-      
+
       if (sectionGroup) {
         const sectionId = sectionGroup.getAttribute('data-section-id');
         if (sectionId) {
           setHoveredSection(sectionId);
-          // Get position relative to container
           const rect = container.getBoundingClientRect();
           setTooltipPosition({
             x: e.clientX - rect.left,
@@ -289,9 +230,7 @@ export const InteractiveSVGMap = ({
       }
     };
 
-    const handleMouseLeave = () => {
-      setHoveredSection(null);
-    };
+    const handleMouseLeave = () => setHoveredSection(null);
 
     container.addEventListener('click', handleClick);
     container.addEventListener('mousemove', handleMouseMove);
@@ -309,17 +248,13 @@ export const InteractiveSVGMap = ({
     const container = containerRef.current;
     if (!container) return;
 
-    // Remove selected class from all sections
     container.querySelectorAll('g[data-section-id].selected').forEach(el => {
       el.classList.remove('selected');
     });
 
-    // Add selected class to current selection
     if (selectedSection) {
       const selected = container.querySelector(`g[data-section-id="${selectedSection}"]`);
-      if (selected) {
-        selected.classList.add('selected');
-      }
+      if (selected) selected.classList.add('selected');
     }
   }, [selectedSection]);
 
@@ -344,12 +279,34 @@ export const InteractiveSVGMap = ({
       </div>
 
       {/* SVG Container */}
-      <div 
+      <div
         ref={containerRef}
-        className="relative w-full bg-secondary/30 rounded-xl p-4 overflow-hidden"
+        className={cn('relative w-full bg-secondary/30 rounded-xl p-4 overflow-hidden')}
         style={{ minHeight: '400px' }}
         dangerouslySetInnerHTML={{ __html: processedSVG() }}
       />
+
+      {/* Overlay labels (stable sizing & alignment) */}
+      <div className="absolute inset-0 pointer-events-none">
+        {labels.map(l => (
+          <div
+            key={l.sectionId}
+            className="absolute font-semibold text-foreground select-none"
+            style={{
+              left: l.x,
+              top: l.y,
+              transform: 'translate(-50%, -50%)',
+              fontSize: `${l.fontSize}px`,
+              lineHeight: 1,
+              textShadow:
+                '0 1px 0 hsl(var(--background) / 0.95), 0 0 6px hsl(var(--background) / 0.95), 0 2px 10px hsl(var(--background) / 0.85)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {l.label}
+          </div>
+        ))}
+      </div>
 
       {/* Hover Tooltip */}
       {hoveredData && (
@@ -360,15 +317,9 @@ export const InteractiveSVGMap = ({
             top: tooltipPosition.y - 80,
           }}
         >
-          <p className="font-semibold text-foreground text-sm mb-1">
-            {hoveredData.name}
-          </p>
-          <p className="text-xs text-muted-foreground mb-1">
-            {getAvailableTickets(hoveredData)} tickets available
-          </p>
-          <p className="text-accent font-bold">
-            {formatPrice(hoveredData.currentPrice)}
-          </p>
+          <p className="font-semibold text-foreground text-sm mb-1">{hoveredData.name}</p>
+          <p className="text-xs text-muted-foreground mb-1">{getAvailableTickets(hoveredData)} tickets available</p>
+          <p className="text-accent font-bold">{formatPrice(hoveredData.currentPrice)}</p>
         </div>
       )}
     </div>
