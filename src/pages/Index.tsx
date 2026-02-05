@@ -6,6 +6,7 @@ import { EventCard } from '@/components/events/EventCard';
 import { CategoryTabs } from '@/components/events/CategoryTabs';
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
+import { WorldCupSection } from '@/components/home/WorldCupSection';
 import { events, getFeaturedEvents, getEventsByCategory, formatPrice } from '@/data/events';
 import { getEventsByCity } from '@/data/eventsData';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -62,6 +63,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* FIFA World Cup 2026 Section - Most Prominent */}
+      <WorldCupSection />
 
       {/* Featured Events Carousel */}
       <section className="py-12 lg:py-16">
