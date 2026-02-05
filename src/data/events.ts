@@ -1,22 +1,13 @@
 import { Venue, Event } from '@/types';
+import { venueNames, getVenueData, hasVenueMap } from './venues';
 
-// Venue map file mappings - map venue name to the SVG filename
-export const venueMapFiles: Record<string, string> = {
-  'Madison Square Garden': 'Madison Square Garden',
-  'Crypto.com Arena': 'Crypto.com Arena',
-  'Barclays Center': 'Barclays Center',
-  'Chase Center': 'Chase Center',
-  'Hollywood Bowl': 'Hollywood Bowl',
-  'Radio City Music Hall': 'Radio City Music Hall',
-  'Beacon Theatre': 'Beacon Theatre',
-  'NRG Stadium': 'NRG Stadium',
-  'SoFi Stadium': 'SoFi Stadium',
-  'Kia Forum': 'Kia Forum',
-  'MSG Sphere': 'MSG Sphere',
-  'Soldier Field': 'Soldier Field',
-  'Fox Theatre': 'Fox Theatre',
-  'Gershwin Theatre': 'Gershwin Theatre',
-};
+// Re-export venue utilities for backwards compatibility
+export { venueNames, getVenueData, hasVenueMap };
+
+// Venue map file mappings - auto-generated from venue names
+export const venueMapFiles: Record<string, string> = Object.fromEntries(
+  venueNames.map(name => [name, name])
+);
 
 export const venues: Venue[] = [
   {
