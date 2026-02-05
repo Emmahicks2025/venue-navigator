@@ -55,24 +55,6 @@ export const InteractiveSVGMap = ({
     // Add styling for sections
     const style = doc.createElementNS('http://www.w3.org/2000/svg', 'style');
     style.textContent = `
-      /* Hide embedded info boxes, overlays, and instructions from SVG */
-      .info-box, .venue-info, .title-group, .overlay-info,
-      [id*="info-box"], [id*="info_box"], [id*="infobox"],
-      [id*="overlay"], [id*="tooltip"], [id*="instructions"],
-      [class*="info-box"], [class*="overlay"], [class*="tooltip"],
-      foreignObject, .foreignObject,
-      [data-info], [data-overlay] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-      }
-      
-      /* Hide floating text elements that are not inside section groups */
-      svg > text,
-      svg > g:not([data-section-id]) > text {
-        display: none !important;
-      }
-
       g[data-section-id] {
         cursor: pointer;
         transition: all 0.2s ease;
@@ -94,92 +76,26 @@ export const InteractiveSVGMap = ({
       }
     `;
     
-    // Remove floating text elements that are not part of interactive sections
-    // This targets standalone text/tspan elements that show section numbers, labels etc.
-    const removeFloatingElements = (parent: Element) => {
-      // Remove text elements not inside data-section-id groups
-      parent.querySelectorAll('text').forEach(textEl => {
-        const parentSection = textEl.closest('g[data-section-id]');
-        if (!parentSection) {
-          // Check if it's a stage label we want to keep
-          const content = textEl.textContent?.toLowerCase() || '';
-          if (!content.includes('stage') && !content.includes('floor') && !content.includes('court')) {
-            textEl.remove();
-          }
-        }
-      });
-      
-      // Remove tspan elements that might be floating
-      parent.querySelectorAll('tspan').forEach(tspan => {
-        const parentSection = tspan.closest('g[data-section-id]');
-        if (!parentSection) {
-          tspan.remove();
-        }
-      });
-    };
+    // AGGRESSIVE REMOVAL: Remove ALL text elements except those we want to keep
+    const allowedTextContent = ['stage', 'floor', 'court', 'field', 'ice', 'ring', 'pit'];
     
-    // Remove info elements and overlays
-    const infoSelectors = [
-      'foreignObject',
-      '[id*="info"]',
-      '[id*="overlay"]',
-      '[id*="tooltip"]',
-      'g[opacity="0.9"]',
-      'rect[fill="#333333"]',
-      '[id*="label"]',
-      '[id*="text"]',
-      '[class*="label"]',
-    ];
-    
-    infoSelectors.forEach(selector => {
-      try {
-        svg.querySelectorAll(selector).forEach(el => {
-          // Check if it's inside a section group - if so, keep it
-          const parentSection = el.closest('g[data-section-id]');
-          if (!parentSection) {
-            // Check if it contains instruction text
-            const text = el.textContent || '';
-            if (text.includes('Click a section') || 
-                text.includes('see details') ||
-                text.match(/^\d+$/) || // Pure numbers
-                text.match(/^[A-Z]\d*$/)) { // Letters like "A", "B1", etc.
-              el.remove();
-            }
-          }
-        });
-      } catch (e) {
-        // Selector might be invalid, continue
+    svg.querySelectorAll('text, tspan').forEach(textEl => {
+      const content = (textEl.textContent || '').toLowerCase().trim();
+      const shouldKeep = allowedTextContent.some(allowed => content.includes(allowed));
+      if (!shouldKeep) {
+        textEl.remove();
       }
     });
     
-    // Remove any groups containing the info overlay text
-    svg.querySelectorAll('g').forEach(g => {
-      const text = g.textContent || '';
-      // Remove instruction overlays
-      if (text.includes('Click a section') && text.includes('see details')) {
-        g.remove();
-        return;
-      }
-      // Remove groups that only contain floating numbers/labels (not section groups)
-      if (!g.hasAttribute('data-section-id') && !g.querySelector('[data-section-id]')) {
-        const childrenCount = g.children.length;
-        const textCount = g.querySelectorAll('text, tspan').length;
-        // If the group is mostly text elements and not a recognized structure
-        if (childrenCount > 0 && textCount === childrenCount) {
-          const allText = text.trim();
-          // Remove if it's just numbers or short labels
-          if (allText.match(/^[\d\s]+$/) || allText.length < 5) {
-            // Keep groups with structural elements
-            if (!g.querySelector('path, polygon, rect, circle')) {
-              g.remove();
-            }
-          }
-        }
+    // Remove foreignObject elements (often contain overlays)
+    svg.querySelectorAll('foreignObject').forEach(el => el.remove());
+    
+    // Remove any groups with info/overlay in id or class
+    svg.querySelectorAll('[id*="info"], [id*="overlay"], [id*="tooltip"], [class*="info"], [class*="overlay"]').forEach(el => {
+      if (!el.closest('g[data-section-id]')) {
+        el.remove();
       }
     });
-    
-    // Clean floating text elements
-    removeFloatingElements(svg);
 
     svg.insertBefore(style, svg.firstChild);
 
