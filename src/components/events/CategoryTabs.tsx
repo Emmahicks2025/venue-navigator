@@ -20,7 +20,35 @@ const categoryConfig: { id: EventCategory | 'all'; icon: React.ElementType; colo
 export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) => {
   return (
     <div className={cn('flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide', className)}>
-      {categoryConfig.map(({ id, icon: Icon, color }) => {
+      {categoryConfig.slice(0, 2).map(({ id, icon: Icon, color }) => {
+        const isActive = activeCategory === id;
+        return (
+          <Link
+            key={id}
+            to={`/events/${id}`}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300',
+              isActive
+                ? `bg-gradient-to-r ${color} text-white shadow-lg`
+                : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+            )}
+          >
+            <Icon className="w-4 h-4" />
+            {getCategoryLabel(id)}
+          </Link>
+        );
+      })}
+      
+      {/* World Cup 2026 Special Tab */}
+      <Link
+        to="/events/sports?search=world%20cup"
+        className="flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 bg-gradient-to-r from-emerald-600 to-teal-600 text-white border border-yellow-500/50 shadow-md shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-105"
+      >
+        <Trophy className="w-4 h-4 text-yellow-400" />
+        <span>World Cup 2026</span>
+      </Link>
+      
+      {categoryConfig.slice(2).map(({ id, icon: Icon, color }) => {
         const isActive = activeCategory === id;
         return (
           <Link
