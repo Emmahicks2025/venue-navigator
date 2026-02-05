@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { SVGSection } from '@/lib/svgParser';
 import { formatPrice } from '@/data/events';
 import { cn } from '@/lib/utils';
@@ -17,14 +17,6 @@ interface InteractiveSVGMapProps {
   selectedSection: string | null;
   onSectionSelect: (sectionId: string) => void;
 }
-
-type SectionLabel = {
-  sectionId: string;
-  label: string;
-  x: number;
-  y: number;
-  fontSize: number;
-};
 
 // Get a short display label from section ID
 const getShortLabel = (sectionId: string): string => {
@@ -54,6 +46,163 @@ const getShortLabel = (sectionId: string): string => {
   return result.toUpperCase();
 };
 
+// Parse path d attribute to get bounding box
+const getPathBounds = (d: string): { minX: number; minY: number; maxX: number; maxY: number } | null => {
+  const coords: { x: number; y: number }[] = [];
+  
+  // Match all coordinate pairs in the path
+  const regex = /([MLHVCSQTAZ])\s*([^MLHVCSQTAZ]*)/gi;
+  let match;
+  let currentX = 0;
+  let currentY = 0;
+  
+  while ((match = regex.exec(d)) !== null) {
+    const cmd = match[1].toUpperCase();
+    const args = match[2].trim().split(/[\s,]+/).filter(Boolean).map(Number);
+    
+    if (cmd === 'M' || cmd === 'L') {
+      for (let i = 0; i < args.length; i += 2) {
+        if (!isNaN(args[i]) && !isNaN(args[i + 1])) {
+          currentX = args[i];
+          currentY = args[i + 1];
+          coords.push({ x: currentX, y: currentY });
+        }
+      }
+    } else if (cmd === 'H') {
+      for (const x of args) {
+        if (!isNaN(x)) {
+          currentX = x;
+          coords.push({ x: currentX, y: currentY });
+        }
+      }
+    } else if (cmd === 'V') {
+      for (const y of args) {
+        if (!isNaN(y)) {
+          currentY = y;
+          coords.push({ x: currentX, y: currentY });
+        }
+      }
+    } else if (cmd === 'C') {
+      // Cubic bezier - take endpoints
+      for (let i = 0; i < args.length; i += 6) {
+        if (!isNaN(args[i + 4]) && !isNaN(args[i + 5])) {
+          currentX = args[i + 4];
+          currentY = args[i + 5];
+          coords.push({ x: currentX, y: currentY });
+        }
+      }
+    } else if (cmd === 'Q') {
+      // Quadratic bezier - take endpoints
+      for (let i = 0; i < args.length; i += 4) {
+        if (!isNaN(args[i + 2]) && !isNaN(args[i + 3])) {
+          currentX = args[i + 2];
+          currentY = args[i + 3];
+          coords.push({ x: currentX, y: currentY });
+        }
+      }
+    }
+  }
+  
+  if (coords.length === 0) return null;
+  
+  const xs = coords.map(c => c.x);
+  const ys = coords.map(c => c.y);
+  
+  return {
+    minX: Math.min(...xs),
+    minY: Math.min(...ys),
+    maxX: Math.max(...xs),
+    maxY: Math.max(...ys),
+  };
+};
+
+// Parse polygon points attribute to get bounding box
+const getPolygonBounds = (points: string): { minX: number; minY: number; maxX: number; maxY: number } | null => {
+  const coords = points.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+  if (coords.length < 4) return null;
+  
+  const xs: number[] = [];
+  const ys: number[] = [];
+  
+  for (let i = 0; i < coords.length; i += 2) {
+    xs.push(coords[i]);
+    ys.push(coords[i + 1]);
+  }
+  
+  return {
+    minX: Math.min(...xs),
+    minY: Math.min(...ys),
+    maxX: Math.max(...xs),
+    maxY: Math.max(...ys),
+  };
+};
+
+// Get rect bounds
+const getRectBounds = (rect: Element): { minX: number; minY: number; maxX: number; maxY: number } | null => {
+  const x = parseFloat(rect.getAttribute('x') || '0');
+  const y = parseFloat(rect.getAttribute('y') || '0');
+  const width = parseFloat(rect.getAttribute('width') || '0');
+  const height = parseFloat(rect.getAttribute('height') || '0');
+  
+  if (width <= 0 || height <= 0) return null;
+  
+  return {
+    minX: x,
+    minY: y,
+    maxX: x + width,
+    maxY: y + height,
+  };
+};
+
+// Calculate the center and dimensions of a section group
+const getSectionGeometry = (group: Element): { cx: number; cy: number; width: number; height: number } | null => {
+  let allBounds: { minX: number; minY: number; maxX: number; maxY: number }[] = [];
+  
+  // Check paths
+  group.querySelectorAll('path').forEach(path => {
+    const d = path.getAttribute('d');
+    if (d) {
+      const bounds = getPathBounds(d);
+      if (bounds) allBounds.push(bounds);
+    }
+  });
+  
+  // Check polygons
+  group.querySelectorAll('polygon').forEach(polygon => {
+    const points = polygon.getAttribute('points');
+    if (points) {
+      const bounds = getPolygonBounds(points);
+      if (bounds) allBounds.push(bounds);
+    }
+  });
+  
+  // Check rects
+  group.querySelectorAll('rect').forEach(rect => {
+    const bounds = getRectBounds(rect);
+    if (bounds) allBounds.push(bounds);
+  });
+  
+  if (allBounds.length === 0) return null;
+  
+  // Merge all bounds
+  const minX = Math.min(...allBounds.map(b => b.minX));
+  const minY = Math.min(...allBounds.map(b => b.minY));
+  const maxX = Math.max(...allBounds.map(b => b.maxX));
+  const maxY = Math.max(...allBounds.map(b => b.maxY));
+  
+  const width = maxX - minX;
+  const height = maxY - minY;
+  
+  if (width <= 0 || height <= 0) return null;
+  
+  return {
+    cx: minX + width / 2,
+    cy: minY + height / 2,
+    width,
+    height,
+  };
+};
+
 export const InteractiveSVGMap = ({
   svgContent,
   sections,
@@ -63,12 +212,11 @@ export const InteractiveSVGMap = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const [labels, setLabels] = useState<SectionLabel[]>([]);
 
   // Create a section lookup map
   const sectionMap = new Map(sections.map(s => [s.id, s]));
 
-  // Process SVG content to remove embedded overlays/text and add consistent section styles
+  // Process SVG content: remove embedded overlays/text and inject our own labels
   const processedSVG = useCallback(() => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgContent, 'image/svg+xml');
@@ -88,6 +236,22 @@ export const InteractiveSVGMap = ({
     svg.setAttribute('height', '100%');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
+    // Remove ALL existing text elements - we'll add our own
+    svg.querySelectorAll('text, tspan').forEach(el => el.remove());
+
+    // Remove foreignObject elements (often contain overlays)
+    svg.querySelectorAll('foreignObject').forEach(el => el.remove());
+
+    // Remove common overlay/info containers
+    svg
+      .querySelectorAll(
+        '[id*="info"], [id*="overlay"], [id*="tooltip"], [class*="info"], [class*="overlay"], [class*="tooltip"]'
+      )
+      .forEach(el => {
+        if (!el.closest('g[data-section-id]')) el.remove();
+      });
+
+    // Add styles for interactivity and labels
     const style = doc.createElementNS('http://www.w3.org/2000/svg', 'style');
     style.textContent = `
       g[data-section-id] {
@@ -109,88 +273,54 @@ export const InteractiveSVGMap = ({
         opacity: 0.4;
         cursor: not-allowed;
       }
+      .section-label {
+        text-anchor: middle;
+        dominant-baseline: central;
+        font-weight: 700;
+        font-family: system-ui, -apple-system, sans-serif;
+        fill: white;
+        stroke: rgba(0,0,0,0.85);
+        stroke-width: 3px;
+        paint-order: stroke fill;
+        pointer-events: none;
+      }
     `;
-
-    // Remove *all* text (we'll render labels as an overlay for consistent sizing/position)
-    svg.querySelectorAll('text, tspan').forEach(el => el.remove());
-
-    // Remove foreignObject elements (often contain overlays)
-    svg.querySelectorAll('foreignObject').forEach(el => el.remove());
-
-    // Remove common overlay/info containers
-    svg
-      .querySelectorAll(
-        '[id*="info"], [id*="overlay"], [id*="tooltip"], [class*="info"], [class*="overlay"], [class*="tooltip"]'
-      )
-      .forEach(el => {
-        if (!el.closest('g[data-section-id]')) el.remove();
-      });
-
     svg.insertBefore(style, svg.firstChild);
+
+    // Inject labels into each section group
+    const sectionGroups = svg.querySelectorAll('g[data-section-id]');
+    sectionGroups.forEach(group => {
+      const sectionId = group.getAttribute('data-section-id');
+      if (!sectionId) return;
+
+      const geometry = getSectionGeometry(group);
+      if (!geometry) return;
+
+      const { cx, cy, width, height } = geometry;
+      const minDim = Math.min(width, height);
+      
+      // Calculate font size based on section dimensions
+      let fontSize = Math.max(10, Math.min(24, minDim * 0.3));
+      
+      const label = getShortLabel(sectionId);
+      
+      // Reduce font size for longer labels
+      if (label.length > 4) fontSize *= 0.85;
+      if (label.length > 6) fontSize *= 0.8;
+
+      // Create and position the text element
+      const text = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', String(cx));
+      text.setAttribute('y', String(cy));
+      text.setAttribute('class', 'section-label');
+      text.setAttribute('font-size', String(fontSize));
+      text.textContent = label;
+      
+      group.appendChild(text);
+    });
 
     return new XMLSerializer().serializeToString(doc);
   }, [svgContent]);
-
-  // Compute label positions from the *rendered* SVG so they stay aligned across maps
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    let raf = 0;
-    let ro: ResizeObserver | null = null;
-
-    const compute = () => {
-      const svg = container.querySelector('svg') as SVGSVGElement | null;
-      if (!svg) return;
-
-      const next: SectionLabel[] = [];
-      const sectionGroups = svg.querySelectorAll('g[data-section-id]');
-
-      sectionGroups.forEach(group => {
-        const sectionId = group.getAttribute('data-section-id') || '';
-        if (!sectionId) return;
-
-        // getBBox gives us the geometry bounds in SVG user units.
-        // This is reliable for centering labels (unlike parsing path data).
-        let bbox: DOMRect;
-        try {
-          bbox = (group as unknown as SVGGElement).getBBox();
-        } catch {
-          return;
-        }
-
-        if (!isFinite(bbox.x) || !isFinite(bbox.y) || bbox.width <= 1 || bbox.height <= 1) return;
-
-        const cx = bbox.x + bbox.width / 2;
-        const cy = bbox.y + bbox.height / 2;
-
-        const minDim = Math.min(bbox.width, bbox.height);
-        // A stable clamp that avoids huge/small swings across venues
-        let fontSize = Math.max(10, Math.min(18, minDim * 0.22));
-
-        const label = getShortLabel(sectionId);
-        if (label.length > 4) fontSize *= 0.9;
-        if (label.length > 6) fontSize *= 0.85;
-
-        next.push({ sectionId, label, x: cx, y: cy, fontSize });
-      });
-
-      setLabels(next);
-    };
-
-    raf = window.requestAnimationFrame(compute);
-
-    ro = new ResizeObserver(() => {
-      window.cancelAnimationFrame(raf);
-      raf = window.requestAnimationFrame(compute);
-    });
-    ro.observe(container);
-
-    return () => {
-      window.cancelAnimationFrame(raf);
-      ro?.disconnect();
-    };
-  }, [svgContent, sections]);
 
   // Handle section interactions
   useEffect(() => {
@@ -285,28 +415,6 @@ export const InteractiveSVGMap = ({
         style={{ minHeight: '400px' }}
         dangerouslySetInnerHTML={{ __html: processedSVG() }}
       />
-
-      {/* Overlay labels (stable sizing & alignment) */}
-      <div className="absolute inset-0 pointer-events-none">
-        {labels.map(l => (
-          <div
-            key={l.sectionId}
-            className="absolute font-semibold text-foreground select-none"
-            style={{
-              left: l.x,
-              top: l.y,
-              transform: 'translate(-50%, -50%)',
-              fontSize: `${l.fontSize}px`,
-              lineHeight: 1,
-              textShadow:
-                '0 1px 0 hsl(var(--background) / 0.95), 0 0 6px hsl(var(--background) / 0.95), 0 2px 10px hsl(var(--background) / 0.85)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {l.label}
-          </div>
-        ))}
-      </div>
 
       {/* Hover Tooltip */}
       {hoveredData && (
