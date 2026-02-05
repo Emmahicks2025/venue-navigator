@@ -37,7 +37,7 @@ const Index = () => {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
+      <section className="relative pt-20 pb-12 sm:pt-24 sm:pb-16 lg:pt-32 lg:pb-20 overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
           <img
@@ -52,19 +52,19 @@ const Index = () => {
         {/* Content */}
         <div className="relative z-10 container mx-auto px-4 text-center">
           <div className="animate-slide-up">
-            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 tracking-tight">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 tracking-tight">
               <span className="text-foreground">Experience It</span>
               <br />
               <span className="text-gradient-primary">Live</span>
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
               Discover and book tickets to the hottest concerts, sports events, theater shows, and more.
             </p>
           </div>
 
           {/* Search Bar */}
           <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            <SearchBar variant="hero" className="mb-8" />
+            <SearchBar variant="hero" className="mb-6" />
           </div>
 
           {/* Quick Category Links */}
@@ -75,7 +75,7 @@ const Index = () => {
       </section>
 
       {/* Featured Events Carousel */}
-      <section className="py-16 lg:py-24">
+      <section className="py-12 lg:py-16">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
