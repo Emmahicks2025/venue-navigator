@@ -1,9 +1,9 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { EventCategory } from '@/types';
 import { getCategoryLabel } from '@/data/events';
 import { cn } from '@/lib/utils';
-import { Music, Trophy, Theater, Laugh, PartyPopper } from 'lucide-react';
+import { Music, Trophy, Theater, Laugh, PartyPopper, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface CategoryTabsProps {
   activeCategory?: string;
@@ -20,16 +20,63 @@ const categoryConfig: { id: EventCategory | 'all'; icon: React.ElementType; colo
 
 export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  };
+
+  useEffect(() => {
+    checkScroll();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll);
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, []);
+
+  const scroll = (dir: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === 'left' ? -150 : 150, behavior: 'smooth' });
+  };
+
+  const tabBase = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium text-xs whitespace-nowrap transition-all duration-300 snap-start shrink-0';
 
   return (
     <div className={cn('relative', className)}>
-      {/* Fade edges to hint scrollability */}
-      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-background to-transparent z-10 sm:hidden" />
-      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-background to-transparent z-10 sm:hidden" />
+      {/* Left arrow indicator */}
+      {canScrollLeft && (
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-0 bottom-0 z-20 flex items-center pl-0.5 pr-2 bg-gradient-to-r from-background via-background/80 to-transparent"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+        </button>
+      )}
+
+      {/* Right arrow indicator */}
+      {canScrollRight && (
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-0 bottom-0 z-20 flex items-center pr-0.5 pl-2 bg-gradient-to-l from-background via-background/80 to-transparent"
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </button>
+      )}
 
       <div
         ref={scrollRef}
-        className="flex items-center gap-2 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
+        className="flex items-center gap-1.5 overflow-x-auto pb-1.5 snap-x snap-mandatory scroll-smooth"
         style={{
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
@@ -43,13 +90,13 @@ export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) =
               key={id}
               to={`/events/${id}`}
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 snap-start shrink-0',
+                tabBase,
                 isActive
                   ? `bg-gradient-to-r ${color} text-white shadow-lg`
                   : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
               )}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
               {getCategoryLabel(id)}
             </Link>
           );
@@ -59,15 +106,16 @@ export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) =
         <Link
           to="/events/world-cup"
           className={cn(
-            'flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-xs whitespace-nowrap transition-all duration-300 snap-start shrink-0 ring-2 ring-offset-1 ring-offset-background',
+            tabBase,
+            'font-bold ring-1.5 ring-offset-1 ring-offset-background',
             activeCategory === 'world-cup'
               ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/40 ring-emerald-400'
               : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/25 ring-yellow-400/60 hover:shadow-lg hover:shadow-emerald-500/40 animate-glow-pulse'
           )}
         >
-          <Trophy className="w-4 h-4 text-yellow-300" />
+          <Trophy className="w-3.5 h-3.5 text-yellow-300" />
           FIFA World Cup
-          <span className="ml-0.5 text-[10px] font-semibold bg-yellow-400 text-black px-1.5 py-0.5 rounded-full leading-none">2026</span>
+          <span className="ml-0.5 text-[8px] font-semibold bg-yellow-400 text-black px-1 py-px rounded-full leading-none">2026</span>
         </Link>
 
         {categoryConfig.slice(2).map(({ id, icon: Icon, color }) => {
@@ -77,13 +125,13 @@ export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) =
               key={id}
               to={`/events/${id}`}
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 snap-start shrink-0',
+                tabBase,
                 isActive
                   ? `bg-gradient-to-r ${color} text-white shadow-lg`
                   : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
               )}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
               {getCategoryLabel(id)}
             </Link>
           );
