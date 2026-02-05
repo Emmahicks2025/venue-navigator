@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { EventCategory } from '@/types';
 import { getCategoryLabel } from '@/data/events';
@@ -18,54 +19,75 @@ const categoryConfig: { id: EventCategory | 'all'; icon: React.ElementType; colo
 ];
 
 export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   return (
-    <div className={cn('flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide', className)}>
-      {categoryConfig.slice(0, 2).map(({ id, icon: Icon, color }) => {
-        const isActive = activeCategory === id;
-        return (
-          <Link
-            key={id}
-            to={`/events/${id}`}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300',
-              isActive
-                ? `bg-gradient-to-r ${color} text-white shadow-lg`
-                : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
-            )}
-          >
-            <Icon className="w-4 h-4" />
-            {getCategoryLabel(id)}
-          </Link>
-        );
-      })}
-      
-      {/* World Cup 2026 Special Tab */}
-      <Link
-        to="/events/world-cup"
-        className="flex items-center gap-1.5 px-3 py-2 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+    <div className={cn('relative', className)}>
+      {/* Fade edges to hint scrollability */}
+      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-background to-transparent z-10 sm:hidden" />
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-background to-transparent z-10 sm:hidden" />
+
+      <div
+        ref={scrollRef}
+        className="flex items-center gap-2 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
       >
-        <Trophy className="w-3.5 h-3.5 text-yellow-400" />
-        FIFA World Cup
-      </Link>
-      
-      {categoryConfig.slice(2).map(({ id, icon: Icon, color }) => {
-        const isActive = activeCategory === id;
-        return (
-          <Link
-            key={id}
-            to={`/events/${id}`}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300',
-              isActive
-                ? `bg-gradient-to-r ${color} text-white shadow-lg`
-                : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
-            )}
-          >
-            <Icon className="w-4 h-4" />
-            {getCategoryLabel(id)}
-          </Link>
-        );
-      })}
+        {categoryConfig.slice(0, 2).map(({ id, icon: Icon, color }) => {
+          const isActive = activeCategory === id;
+          return (
+            <Link
+              key={id}
+              to={`/events/${id}`}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 snap-start shrink-0',
+                isActive
+                  ? `bg-gradient-to-r ${color} text-white shadow-lg`
+                  : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+              )}
+            >
+              <Icon className="w-4 h-4" />
+              {getCategoryLabel(id)}
+            </Link>
+          );
+        })}
+
+        {/* FIFA World Cup Tab */}
+        <Link
+          to="/events/world-cup"
+          className={cn(
+            'flex items-center gap-1.5 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 snap-start shrink-0',
+            activeCategory === 'world-cup'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg'
+              : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+          )}
+        >
+          <Trophy className="w-4 h-4" />
+          FIFA World Cup
+        </Link>
+
+        {categoryConfig.slice(2).map(({ id, icon: Icon, color }) => {
+          const isActive = activeCategory === id;
+          return (
+            <Link
+              key={id}
+              to={`/events/${id}`}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 snap-start shrink-0',
+                isActive
+                  ? `bg-gradient-to-r ${color} text-white shadow-lg`
+                  : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+              )}
+            >
+              <Icon className="w-4 h-4" />
+              {getCategoryLabel(id)}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 };
