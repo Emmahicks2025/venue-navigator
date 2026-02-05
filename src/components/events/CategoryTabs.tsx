@@ -59,7 +59,7 @@ export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) =
         <Link
           to="/events/world-cup"
           className={cn(
-            'flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-300 snap-start shrink-0 ring-2 ring-offset-1 ring-offset-background',
+            'flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-xs whitespace-nowrap transition-all duration-300 snap-start shrink-0 ring-2 ring-offset-1 ring-offset-background',
             activeCategory === 'world-cup'
               ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/40 ring-emerald-400'
               : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/25 ring-yellow-400/60 hover:shadow-lg hover:shadow-emerald-500/40'
