@@ -162,16 +162,12 @@ export const InteractiveSVGMap = ({
       {/* Legend */}
       <div className="flex flex-wrap justify-center gap-4 mb-6 text-sm">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-accent/60 border border-accent" />
-          <span className="text-muted-foreground">Premium</span>
+          <div className="w-4 h-4 rounded bg-primary border border-primary" />
+          <span className="text-muted-foreground">Available</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-primary/50 border border-primary" />
-          <span className="text-muted-foreground">Standard</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-success/50 border border-success" />
-          <span className="text-muted-foreground">Value</span>
+          <div className="w-4 h-4 rounded bg-muted border border-muted-foreground/30" />
+          <span className="text-muted-foreground">Not Available</span>
         </div>
       </div>
 
