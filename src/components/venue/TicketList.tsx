@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { VenueSection, SelectedSeat } from '@/types';
 import { formatPrice } from '@/data/events';
 import { Button } from '@/components/ui/button';
-import { X, Info, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { X, Info, Plus, Minus, ShoppingCart, CreditCard } from 'lucide-react';
 import { SVGSection } from '@/lib/svgParser';
 import { getAvailableTickets } from './InteractiveSVGMap';
 
@@ -18,7 +18,7 @@ interface TicketOption {
 interface TicketListProps {
   section: VenueSection;
   svgSection: SVGSection;
-  onTicketsSelected: (seats: SelectedSeat[]) => void;
+  onTicketsSelected: (seats: SelectedSeat[], goToCheckout?: boolean) => void;
   onClose: () => void;
 }
 
@@ -57,14 +57,14 @@ export const TicketList = ({ section, svgSection, onTicketsSelected, onClose }: 
   const ticketOptions = generateTicketOptions(section, svgSection);
   const availableCount = getAvailableTickets(svgSection);
 
-  const handleSelect = (ticket: TicketOption) => {
+  const handleSelect = (ticket: TicketOption, goToCheckout: boolean = false) => {
     const seats: SelectedSeat[] = Array.from({ length: Math.min(quantity, ticket.seats) }, (_, i) => ({
       sectionName: section.name,
       row: ticket.row.replace('Row ', ''),
       seatNumber: i + 1,
       price: ticket.price,
     }));
-    onTicketsSelected(seats);
+    onTicketsSelected(seats, goToCheckout);
   };
 
   return (
@@ -136,17 +136,30 @@ export const TicketList = ({ section, svgSection, onTicketsSelected, onClose }: 
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-6 flex-shrink-0 ml-4">
+            <div className="flex items-center gap-3 flex-shrink-0 ml-4">
               <div className="text-right">
                 <p className="text-lg font-bold text-foreground">{formatPrice(ticket.price)}</p>
                 <p className="text-xs text-muted-foreground">ea</p>
               </div>
-              <Button
-                onClick={() => handleSelect(ticket)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2"
-              >
-                Select
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={() => handleSelect(ticket, false)}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5 mr-1" />
+                  Add to Cart
+                </Button>
+                <Button
+                  onClick={() => handleSelect(ticket, true)}
+                  size="sm"
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground text-xs"
+                >
+                  <CreditCard className="w-3.5 h-3.5 mr-1" />
+                  Buy Now
+                </Button>
+              </div>
             </div>
           </div>
         ))}
