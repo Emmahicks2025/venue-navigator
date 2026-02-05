@@ -615,9 +615,9 @@ export function getEventsByVenue(venueId: string): Event[] {
   return allEvents.filter(e => e.venueId === venueId);
 }
 
-// Get featured events
+// Get featured events (excludes World Cup - they have their own section)
 export function getFeaturedEvents(): Event[] {
-  return allEvents.filter(e => e.isFeatured);
+  return allEvents.filter(e => e.isFeatured && !e.name.toLowerCase().includes('world cup'));
 }
 
 // Get event by ID
