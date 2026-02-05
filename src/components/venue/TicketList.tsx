@@ -40,12 +40,15 @@ const generateTicketOptions = (section: VenueSection, svgSection: SVGSection): T
       seats: ticketCount,
       price: Math.round(basePrice * priceVariation * 100) / 100,
       note: i % 3 === 0 ? 'Clear view, You will be seated together.' : undefined,
-      isLowestPrice: i === 0,
     });
   }
   
-  // Sort by price
-  return options.sort((a, b) => a.price - b.price);
+  // Sort by price and mark lowest
+  const sorted = options.sort((a, b) => a.price - b.price);
+  if (sorted.length > 0) {
+    sorted[0].isLowestPrice = true;
+  }
+  return sorted;
 };
 
 export const TicketList = ({ section, svgSection, onTicketsSelected, onClose }: TicketListProps) => {
@@ -117,7 +120,7 @@ export const TicketList = ({ section, svgSection, onTicketsSelected, onClose }: 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <p className="font-semibold text-foreground">{section.name}</p>
-                {index === 0 && (
+                {ticket.isLowestPrice && (
                   <span className="text-[10px] font-bold text-success bg-success/20 px-2 py-0.5 rounded uppercase tracking-wide">
                     Lowest Price
                   </span>
