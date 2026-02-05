@@ -93,26 +93,31 @@ export const TicketList = ({ section, svgSection, onTicketsSelected, onClose }: 
   };
 
   return (
-    <div className="bg-card border border-border rounded-2xl overflow-hidden animate-scale-in">
+    <div className="flex flex-col h-full bg-background">
+      {/* Drag Handle */}
+      <div className="flex justify-center pt-3 pb-2">
+        <div className="w-12 h-1.5 rounded-full bg-muted" />
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="flex items-center justify-between px-5 pb-3 border-b border-border">
         <div>
-          <h3 className="font-display text-xl font-bold text-foreground">{section.name}</h3>
+          <h3 className="font-display text-lg font-bold text-foreground">{section.name}</h3>
           <p className="text-sm text-muted-foreground">{availableCount} tickets available</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
           <X className="w-5 h-5" />
         </Button>
       </div>
 
       {/* Urgency Banner */}
-      <div className="flex items-center gap-2 px-6 py-3 bg-accent/10">
-        <span className="text-accent">🔥</span>
-        <span className="text-sm text-accent font-medium">Tickets are selling fast! Secure yours now.</span>
+      <div className="flex items-center justify-center gap-2 px-5 py-2 bg-accent/10">
+        <span className="text-accent text-sm">🔥</span>
+        <span className="text-xs text-accent font-medium">Tickets selling fast!</span>
       </div>
 
-      {/* Ticket List */}
-      <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
+      {/* Ticket List - Scrollable */}
+      <div className="flex-1 overflow-y-auto">
         {ticketOptions.map((ticket) => {
           const currentQty = getRowQuantity(ticket.id, ticket.seats);
           const hasMultipleTickets = ticket.seats > 1;
@@ -120,86 +125,88 @@ export const TicketList = ({ section, svgSection, onTicketsSelected, onClose }: 
           return (
             <div
               key={ticket.id}
-              className="px-6 py-4 hover:bg-secondary/30 transition-colors"
+              className="px-5 py-4 border-b border-border last:border-b-0 hover:bg-secondary/20 transition-colors"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <p className="font-semibold text-foreground">{section.name}</p>
+              {/* Row Info */}
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-foreground">{section.name}</span>
                     {ticket.isLowestPrice && (
-                      <span className="text-[10px] font-bold text-success bg-success/20 px-2 py-0.5 rounded uppercase tracking-wide">
-                        Lowest Price
+                      <span className="text-[10px] font-bold text-success bg-success/20 px-1.5 py-0.5 rounded uppercase">
+                        Best Price
                       </span>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {ticket.row} | {ticket.seats} Ticket{ticket.seats > 1 ? 's' : ''} available
+                    {ticket.row} • {ticket.seats} ticket{ticket.seats > 1 ? 's' : ''}
                   </p>
-                  <p className="text-xs text-muted-foreground/70 mt-0.5">
+                  <p className="text-xs text-muted-foreground/70">
                     Seats: {ticket.availableSeats.join(', ')}
                   </p>
                   {ticket.note && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                      <Info className="w-3 h-3 flex-shrink-0" />
+                    <div className="flex items-center gap-1 text-xs text-success mt-1">
+                      <Info className="w-3 h-3" />
                       <span>{ticket.note}</span>
                     </div>
                   )}
                 </div>
-                <div className="text-right ml-4">
+                <div className="text-right">
                   <p className="text-lg font-bold text-foreground">{formatPrice(ticket.price)}</p>
-                  <p className="text-xs text-muted-foreground">ea</p>
+                  <p className="text-[10px] text-muted-foreground uppercase">per ticket</p>
                 </div>
               </div>
               
-              {/* Per-row quantity selector and actions */}
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+              {/* Quantity & Actions Row */}
+              <div className="flex items-center justify-between gap-3 mt-3">
+                {/* Quantity Selector */}
                 {hasMultipleTickets ? (
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">Qty:</span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setRowQuantity(ticket.id, Math.max(1, currentQty - 1))}
-                        className="h-7 w-7 rounded-full"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <span className="text-sm font-bold text-foreground w-5 text-center">{currentQty}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setRowQuantity(ticket.id, Math.min(ticket.seats, currentQty + 1))}
-                        className="h-7 w-7 rounded-full"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      = {formatPrice(ticket.price * currentQty)}
+                  <div className="flex items-center gap-2 bg-secondary/50 rounded-full px-2 py-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setRowQuantity(ticket.id, Math.max(1, currentQty - 1))}
+                      className="h-6 w-6 rounded-full hover:bg-background"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </Button>
+                    <span className="text-sm font-bold text-foreground w-4 text-center">{currentQty}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setRowQuantity(ticket.id, Math.min(ticket.seats, currentQty + 1))}
+                      className="h-6 w-6 rounded-full hover:bg-background"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                    <span className="text-xs font-medium text-accent ml-1">
+                      {formatPrice(ticket.price * currentQty)}
                     </span>
                   </div>
                 ) : (
-                  <div className="text-sm text-muted-foreground">1 ticket</div>
+                  <div className="bg-secondary/50 rounded-full px-3 py-1.5">
+                    <span className="text-xs text-muted-foreground">1 ticket • {formatPrice(ticket.price)}</span>
+                  </div>
                 )}
                 
+                {/* Action Buttons */}
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => handleSelect(ticket, false)}
                     variant="outline"
                     size="sm"
-                    className="text-xs"
+                    className="h-8 text-xs px-3"
                   >
                     <ShoppingCart className="w-3.5 h-3.5 mr-1" />
-                    Add to Cart
+                    Cart
                   </Button>
                   <Button
                     onClick={() => handleSelect(ticket, true)}
                     size="sm"
-                    className="bg-accent hover:bg-accent/90 text-accent-foreground text-xs"
+                    className="h-8 bg-accent hover:bg-accent/90 text-accent-foreground text-xs px-3"
                   >
                     <CreditCard className="w-3.5 h-3.5 mr-1" />
-                    Buy Now
+                    Buy
                   </Button>
                 </div>
               </div>
@@ -209,8 +216,8 @@ export const TicketList = ({ section, svgSection, onTicketsSelected, onClose }: 
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 bg-secondary/20 border-t border-border">
-        <p className="text-xs text-muted-foreground text-center">
+      <div className="px-5 py-3 bg-secondary/30 border-t border-border">
+        <p className="text-[10px] text-muted-foreground text-center">
           All prices include fees. Prices may vary based on availability.
         </p>
       </div>
