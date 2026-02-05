@@ -77,11 +77,13 @@ export const InteractiveSVGMap = ({
       .section-label {
         pointer-events: none;
         font-family: system-ui, -apple-system, sans-serif;
-        font-weight: 600;
+        font-weight: 700;
         fill: white;
         text-anchor: middle;
         dominant-baseline: central;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        stroke: rgba(0,0,0,0.8);
+        stroke-width: 3px;
+        paint-order: stroke fill;
       }
     `;
     
@@ -137,9 +139,9 @@ export const InteractiveSVGMap = ({
         height = bbox.height;
       }
       
-      // Calculate font size based on section size (with min/max constraints)
+      // Calculate font size based on section size (larger with min/max constraints)
       const minDimension = Math.min(width, height);
-      let fontSize = Math.max(6, Math.min(14, minDimension * 0.35));
+      let fontSize = Math.max(8, Math.min(18, minDimension * 0.45));
       
       // Get a short label for the section
       const label = getShortLabel(sectionId);
