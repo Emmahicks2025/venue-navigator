@@ -55,18 +55,19 @@ export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) =
           );
         })}
 
-        {/* FIFA World Cup Tab */}
+        {/* FIFA World Cup Tab - Prominent */}
         <Link
           to="/events/world-cup"
           className={cn(
-            'flex items-center gap-1.5 px-4 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all duration-300 snap-start shrink-0',
+            'flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-300 snap-start shrink-0 ring-2 ring-offset-1 ring-offset-background',
             activeCategory === 'world-cup'
-              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg'
-              : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/40 ring-emerald-400'
+              : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/25 ring-yellow-400/60 hover:shadow-lg hover:shadow-emerald-500/40'
           )}
         >
-          <Trophy className="w-4 h-4" />
+          <Trophy className="w-4 h-4 text-yellow-300" />
           FIFA World Cup
+          <span className="ml-0.5 text-[10px] font-semibold bg-yellow-400 text-black px-1.5 py-0.5 rounded-full leading-none">2026</span>
         </Link>
 
         {categoryConfig.slice(2).map(({ id, icon: Icon, color }) => {
