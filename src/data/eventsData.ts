@@ -293,19 +293,9 @@ interface RawEventData {
 
 // All raw events extracted from Excel files
 const rawEvents: RawEventData[] = [
-  // ========== FIFA WORLD CUP 2026 ==========
-  { name: 'World Cup 2026: Group Stage - Match 1', performer: 'USA vs TBD', category: 'sports', venueName: 'MetLife Stadium', city: 'East Rutherford', state: 'NJ', date: '2026-06-11', time: '18:00', minPrice: 195, maxPrice: 1250, isFeatured: true, description: 'Experience the FIFA World Cup 2026 opening group stage match at MetLife Stadium.' },
-  { name: 'World Cup 2026: Group Stage - Match 2', performer: 'Mexico vs TBD', category: 'sports', venueName: 'SoFi Stadium', city: 'Inglewood', state: 'CA', date: '2026-06-12', time: '15:00', minPrice: 185, maxPrice: 1150, isFeatured: true, description: 'Watch Mexico compete in the FIFA World Cup 2026 at SoFi Stadium.' },
-  { name: 'World Cup 2026: Group Stage - Match 3', performer: 'Canada vs TBD', category: 'sports', venueName: 'Mercedes-Benz Stadium', city: 'Atlanta', state: 'GA', date: '2026-06-13', time: '12:00', minPrice: 175, maxPrice: 995, description: 'See Canada take the field at Mercedes-Benz Stadium for World Cup 2026.' },
-  { name: 'World Cup 2026: Group Stage - Match 4', performer: 'Brazil vs TBD', category: 'sports', venueName: 'Hard Rock Stadium', city: 'Miami Gardens', state: 'FL', date: '2026-06-14', time: '18:00', minPrice: 225, maxPrice: 1495, isFeatured: true, description: 'Watch 5-time champions Brazil at Hard Rock Stadium.' },
-  { name: 'World Cup 2026: Group Stage - Match 5', performer: 'Argentina vs TBD', category: 'sports', venueName: 'NRG Stadium', city: 'Houston', state: 'TX', date: '2026-06-15', time: '20:00', minPrice: 245, maxPrice: 1695, isFeatured: true, description: 'See the reigning World Cup champions Argentina live at NRG Stadium.' },
-  { name: 'World Cup 2026: Group Stage - Match 6', performer: 'Germany vs TBD', category: 'sports', venueName: 'Lincoln Financial Field', city: 'Philadelphia', state: 'PA', date: '2026-06-16', time: '15:00', minPrice: 195, maxPrice: 1195, description: 'Watch Germany compete at Lincoln Financial Field.' },
-  { name: 'World Cup 2026: Group Stage - Match 7', performer: 'France vs TBD', category: 'sports', venueName: 'Levi\'s Stadium', city: 'Santa Clara', state: 'CA', date: '2026-06-17', time: '18:00', minPrice: 215, maxPrice: 1350, isFeatured: true, description: 'Experience France at Levi\'s Stadium for World Cup 2026.' },
-  { name: 'World Cup 2026: Group Stage - Match 8', performer: 'England vs TBD', category: 'sports', venueName: 'Gillette Stadium', city: 'Foxborough', state: 'MA', date: '2026-06-18', time: '12:00', minPrice: 205, maxPrice: 1295, description: 'Watch England play at Gillette Stadium.' },
-  { name: 'World Cup 2026: Round of 16', performer: 'TBD vs TBD', category: 'sports', venueName: 'MetLife Stadium', city: 'East Rutherford', state: 'NJ', date: '2026-07-01', time: '18:00', minPrice: 295, maxPrice: 1795, description: 'Round of 16 knockout match at MetLife Stadium.' },
-  { name: 'World Cup 2026: Quarterfinal', performer: 'TBD vs TBD', category: 'sports', venueName: 'SoFi Stadium', city: 'Inglewood', state: 'CA', date: '2026-07-09', time: '15:00', minPrice: 395, maxPrice: 2495, isFeatured: true, description: 'FIFA World Cup 2026 Quarterfinal at SoFi Stadium.' },
-  { name: 'World Cup 2026: Semifinal', performer: 'TBD vs TBD', category: 'sports', venueName: 'Hard Rock Stadium', city: 'Miami Gardens', state: 'FL', date: '2026-07-14', time: '18:00', minPrice: 495, maxPrice: 3495, isFeatured: true, description: 'FIFA World Cup 2026 Semifinal at Hard Rock Stadium.' },
-  { name: 'World Cup 2026: Final', performer: 'TBD vs TBD', category: 'sports', venueName: 'MetLife Stadium', city: 'East Rutherford', state: 'NJ', date: '2026-07-19', time: '16:00', minPrice: 795, maxPrice: 5995, isFeatured: true, description: 'The FIFA World Cup 2026 Final at MetLife Stadium - witness history.' },
+  // ========== FIFA WORLD CUP 2026 ========== (now loaded from database, see WorldCupSection)
+  // Legacy local stubs removed - real data comes from Supabase events table
+
 
   // ========== CONCERTS ==========
   // Houston venues

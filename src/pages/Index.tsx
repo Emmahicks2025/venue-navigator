@@ -4,6 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { EventCard } from '@/components/events/EventCard';
 import { CategoryTabs } from '@/components/events/CategoryTabs';
+import { WorldCupSection } from '@/components/home/WorldCupSection';
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
 
@@ -63,6 +64,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* FIFA World Cup 2026 Section */}
+      <WorldCupSection />
 
       {/* Featured Events Carousel */}
       <section className="py-12 lg:py-16">
