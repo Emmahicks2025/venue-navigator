@@ -164,43 +164,45 @@ const EventDetailPage = () => {
                 </div>
               </div>
 
-              {/* Venue Map */}
-              <div className="bg-card border border-border rounded-2xl p-6 lg:p-8">
-                <h2 className="font-display text-xl font-bold text-foreground mb-6">Select Your Seats</h2>
-                
-                {selectedSectionData && selectedSVGSection ? (
-                  <TicketList
-                    section={{
-                      ...selectedSectionData,
-                      basePrice: selectedSVGSection.currentPrice,
-                    }}
-                    svgSection={selectedSVGSection}
-                    onTicketsSelected={handleSeatsSelected}
-                    onClose={() => setSelectedSection(null)}
-                  />
-                ) : svgLoading ? (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-                    <p className="text-muted-foreground">Loading venue map...</p>
-                  </div>
-                ) : svgError || !svgContent ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground mb-4">
-                      Interactive venue map not available for this venue.
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Please select a section from the pricing panel.
-                    </p>
-                  </div>
-                ) : (
-                  <InteractiveSVGMap
-                    svgContent={svgContent}
-                    sections={svgSections}
-                    selectedSection={selectedSection}
-                    onSectionSelect={setSelectedSection}
-                  />
-                )}
-              </div>
+              {/* Venue Map or Ticket List */}
+              {selectedSectionData && selectedSVGSection ? (
+                <TicketList
+                  section={{
+                    ...selectedSectionData,
+                    basePrice: selectedSVGSection.currentPrice,
+                  }}
+                  svgSection={selectedSVGSection}
+                  onTicketsSelected={handleSeatsSelected}
+                  onClose={() => setSelectedSection(null)}
+                />
+              ) : (
+                <div className="bg-card border border-border rounded-2xl p-6 lg:p-8">
+                  <h2 className="font-display text-xl font-bold text-foreground mb-6">Select Your Seats</h2>
+                  
+                  {svgLoading ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+                      <p className="text-muted-foreground">Loading venue map...</p>
+                    </div>
+                  ) : svgError || !svgContent ? (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground mb-4">
+                        Interactive venue map not available for this venue.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Please select a section from the pricing panel.
+                      </p>
+                    </div>
+                  ) : (
+                    <InteractiveSVGMap
+                      svgContent={svgContent}
+                      sections={svgSections}
+                      selectedSection={selectedSection}
+                      onSectionSelect={setSelectedSection}
+                    />
+                  )}
+                </div>
+              )}
 
               {/* Description */}
               <div className="bg-card border border-border rounded-2xl p-6 lg:p-8">
