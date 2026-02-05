@@ -14,6 +14,7 @@ import SearchPage from "./pages/SearchPage";
 import AdminPage from "./pages/AdminPage";
 import DbEventDetailPage from "./pages/DbEventDetailPage";
 import WorldCupPage from "./pages/WorldCupPage";
+import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/order-success" element={<OrderSuccessPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/auth" element={<AuthPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
