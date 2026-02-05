@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 // Calculate available tickets for a section (mock - based on section data)
 export const getAvailableTickets = (section: SVGSection): number => {
   const totalSeats = section.rows * section.seatsPerRow;
-  // Mock availability: 60-95% of seats available based on price (higher price = fewer available)
   const availabilityRate = 0.6 + (Math.random() * 0.35);
   return Math.floor(totalSeats * availabilityRate);
 };
@@ -18,191 +17,6 @@ interface InteractiveSVGMapProps {
   onSectionSelect: (sectionId: string) => void;
 }
 
-// Get a short display label from section ID
-const getShortLabel = (sectionId: string): string => {
-  let label = sectionId
-    .replace(/^(SECTION[-_]?|SEC[-_]?|ZONE[-_]?)/i, '')
-    .replace(/[-_]GROUP$/i, '')
-    .replace(/[-_]/g, ' ')
-    .trim();
-
-  if (!label) return sectionId;
-
-  // Just a number
-  if (/^\d+$/.test(label)) return label;
-
-  // Letter+number (A1, B12)
-  if (/^[A-Z]\d+$/i.test(label)) return label.toUpperCase();
-
-  // Shorten long names
-  const parts = label.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return label.substring(0, 5).toUpperCase();
-
-  let result = '';
-  for (const part of parts) {
-    if (/^\d+$/.test(part)) result += part;
-    else result += part[0];
-  }
-  return result.toUpperCase();
-};
-
-// Parse path d attribute to get bounding box
-const getPathBounds = (d: string): { minX: number; minY: number; maxX: number; maxY: number } | null => {
-  const coords: { x: number; y: number }[] = [];
-  
-  // Match all coordinate pairs in the path
-  const regex = /([MLHVCSQTAZ])\s*([^MLHVCSQTAZ]*)/gi;
-  let match;
-  let currentX = 0;
-  let currentY = 0;
-  
-  while ((match = regex.exec(d)) !== null) {
-    const cmd = match[1].toUpperCase();
-    const args = match[2].trim().split(/[\s,]+/).filter(Boolean).map(Number);
-    
-    if (cmd === 'M' || cmd === 'L') {
-      for (let i = 0; i < args.length; i += 2) {
-        if (!isNaN(args[i]) && !isNaN(args[i + 1])) {
-          currentX = args[i];
-          currentY = args[i + 1];
-          coords.push({ x: currentX, y: currentY });
-        }
-      }
-    } else if (cmd === 'H') {
-      for (const x of args) {
-        if (!isNaN(x)) {
-          currentX = x;
-          coords.push({ x: currentX, y: currentY });
-        }
-      }
-    } else if (cmd === 'V') {
-      for (const y of args) {
-        if (!isNaN(y)) {
-          currentY = y;
-          coords.push({ x: currentX, y: currentY });
-        }
-      }
-    } else if (cmd === 'C') {
-      // Cubic bezier - take endpoints
-      for (let i = 0; i < args.length; i += 6) {
-        if (!isNaN(args[i + 4]) && !isNaN(args[i + 5])) {
-          currentX = args[i + 4];
-          currentY = args[i + 5];
-          coords.push({ x: currentX, y: currentY });
-        }
-      }
-    } else if (cmd === 'Q') {
-      // Quadratic bezier - take endpoints
-      for (let i = 0; i < args.length; i += 4) {
-        if (!isNaN(args[i + 2]) && !isNaN(args[i + 3])) {
-          currentX = args[i + 2];
-          currentY = args[i + 3];
-          coords.push({ x: currentX, y: currentY });
-        }
-      }
-    }
-  }
-  
-  if (coords.length === 0) return null;
-  
-  const xs = coords.map(c => c.x);
-  const ys = coords.map(c => c.y);
-  
-  return {
-    minX: Math.min(...xs),
-    minY: Math.min(...ys),
-    maxX: Math.max(...xs),
-    maxY: Math.max(...ys),
-  };
-};
-
-// Parse polygon points attribute to get bounding box
-const getPolygonBounds = (points: string): { minX: number; minY: number; maxX: number; maxY: number } | null => {
-  const coords = points.trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
-  if (coords.length < 4) return null;
-  
-  const xs: number[] = [];
-  const ys: number[] = [];
-  
-  for (let i = 0; i < coords.length; i += 2) {
-    xs.push(coords[i]);
-    ys.push(coords[i + 1]);
-  }
-  
-  return {
-    minX: Math.min(...xs),
-    minY: Math.min(...ys),
-    maxX: Math.max(...xs),
-    maxY: Math.max(...ys),
-  };
-};
-
-// Get rect bounds
-const getRectBounds = (rect: Element): { minX: number; minY: number; maxX: number; maxY: number } | null => {
-  const x = parseFloat(rect.getAttribute('x') || '0');
-  const y = parseFloat(rect.getAttribute('y') || '0');
-  const width = parseFloat(rect.getAttribute('width') || '0');
-  const height = parseFloat(rect.getAttribute('height') || '0');
-  
-  if (width <= 0 || height <= 0) return null;
-  
-  return {
-    minX: x,
-    minY: y,
-    maxX: x + width,
-    maxY: y + height,
-  };
-};
-
-// Calculate the center and dimensions of a section group
-const getSectionGeometry = (group: Element): { cx: number; cy: number; width: number; height: number } | null => {
-  let allBounds: { minX: number; minY: number; maxX: number; maxY: number }[] = [];
-  
-  // Check paths
-  group.querySelectorAll('path').forEach(path => {
-    const d = path.getAttribute('d');
-    if (d) {
-      const bounds = getPathBounds(d);
-      if (bounds) allBounds.push(bounds);
-    }
-  });
-  
-  // Check polygons
-  group.querySelectorAll('polygon').forEach(polygon => {
-    const points = polygon.getAttribute('points');
-    if (points) {
-      const bounds = getPolygonBounds(points);
-      if (bounds) allBounds.push(bounds);
-    }
-  });
-  
-  // Check rects
-  group.querySelectorAll('rect').forEach(rect => {
-    const bounds = getRectBounds(rect);
-    if (bounds) allBounds.push(bounds);
-  });
-  
-  if (allBounds.length === 0) return null;
-  
-  // Merge all bounds
-  const minX = Math.min(...allBounds.map(b => b.minX));
-  const minY = Math.min(...allBounds.map(b => b.minY));
-  const maxX = Math.max(...allBounds.map(b => b.maxX));
-  const maxY = Math.max(...allBounds.map(b => b.maxY));
-  
-  const width = maxX - minX;
-  const height = maxY - minY;
-  
-  if (width <= 0 || height <= 0) return null;
-  
-  return {
-    cx: minX + width / 2,
-    cy: minY + height / 2,
-    width,
-    height,
-  };
-};
-
 export const InteractiveSVGMap = ({
   svgContent,
   sections,
@@ -213,10 +27,9 @@ export const InteractiveSVGMap = ({
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
-  // Create a section lookup map
   const sectionMap = new Map(sections.map(s => [s.id, s]));
 
-  // Process SVG content: remove embedded overlays/text and inject our own labels
+  // Process SVG content: remove embedded overlays/text, make responsive
   const processedSVG = useCallback(() => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgContent, 'image/svg+xml');
@@ -224,22 +37,20 @@ export const InteractiveSVGMap = ({
 
     if (!svg) return svgContent;
 
-    // Add viewBox if missing for responsiveness
     if (!svg.getAttribute('viewBox')) {
       const width = svg.getAttribute('width') || '800';
       const height = svg.getAttribute('height') || '600';
       svg.setAttribute('viewBox', `0 0 ${parseFloat(width)} ${parseFloat(height)}`);
     }
 
-    // Make it responsive
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-    // Remove ALL existing text elements - we'll add our own
+    // Remove ALL text elements
     svg.querySelectorAll('text, tspan').forEach(el => el.remove());
 
-    // Remove foreignObject elements (often contain overlays)
+    // Remove foreignObject elements
     svg.querySelectorAll('foreignObject').forEach(el => el.remove());
 
     // Remove common overlay/info containers
@@ -251,7 +62,6 @@ export const InteractiveSVGMap = ({
         if (!el.closest('g[data-section-id]')) el.remove();
       });
 
-    // Add styles for interactivity and labels
     const style = doc.createElementNS('http://www.w3.org/2000/svg', 'style');
     style.textContent = `
       g[data-section-id] {
@@ -273,51 +83,8 @@ export const InteractiveSVGMap = ({
         opacity: 0.4;
         cursor: not-allowed;
       }
-      .section-label {
-        text-anchor: middle;
-        dominant-baseline: central;
-        font-weight: 700;
-        font-family: system-ui, -apple-system, sans-serif;
-        fill: white;
-        stroke: rgba(0,0,0,0.85);
-        stroke-width: 3px;
-        paint-order: stroke fill;
-        pointer-events: none;
-      }
     `;
     svg.insertBefore(style, svg.firstChild);
-
-    // Inject labels into each section group
-    const sectionGroups = svg.querySelectorAll('g[data-section-id]');
-    sectionGroups.forEach(group => {
-      const sectionId = group.getAttribute('data-section-id');
-      if (!sectionId) return;
-
-      const geometry = getSectionGeometry(group);
-      if (!geometry) return;
-
-      const { cx, cy, width, height } = geometry;
-      const minDim = Math.min(width, height);
-      
-      // Calculate font size based on section dimensions
-      let fontSize = Math.max(10, Math.min(24, minDim * 0.3));
-      
-      const label = getShortLabel(sectionId);
-      
-      // Reduce font size for longer labels
-      if (label.length > 4) fontSize *= 0.85;
-      if (label.length > 6) fontSize *= 0.8;
-
-      // Create and position the text element
-      const text = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', String(cx));
-      text.setAttribute('y', String(cy));
-      text.setAttribute('class', 'section-label');
-      text.setAttribute('font-size', String(fontSize));
-      text.textContent = label;
-      
-      group.appendChild(text);
-    });
 
     return new XMLSerializer().serializeToString(doc);
   }, [svgContent]);
