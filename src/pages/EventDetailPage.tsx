@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, Share2, Heart, ChevronLeft, Info, Shield, Ticket } from 'lucide-react';
+import { MapPin, Calendar, Clock, Share2, Heart, ChevronLeft, Info, Shield, Ticket, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { VenueMap } from '@/components/venue/VenueMap';
+import { InteractiveSVGMap } from '@/components/venue/InteractiveSVGMap';
 import { SeatSelector } from '@/components/venue/SeatSelector';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
-import { getEventById, getVenueById, formatDate, formatTime, formatPrice, getCategoryLabel } from '@/data/events';
-import { SelectedSeat } from '@/types';
+import { getEventById, getVenueByName, formatDate, formatTime, formatPrice, getCategoryLabel } from '@/data/events';
+import { useVenueSVG } from '@/hooks/useVenueSVG';
+import { getPriceCategory } from '@/lib/svgParser';
+import { SelectedSeat, VenueSection } from '@/types';
 import { toast } from 'sonner';
 
 const EventDetailPage = () => {
@@ -17,9 +19,39 @@ const EventDetailPage = () => {
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
   const event = getEventById(id || '');
-  const venue = event ? getVenueById(event.venueId) : undefined;
+  const venue = event ? getVenueByName(event.venueName) : undefined;
+  
+  // Load SVG map for the venue - always call hooks unconditionally
+  const { svgContent, sections: svgSections, loading: svgLoading, error: svgError } = useVenueSVG(
+    venue?.svgMapId
+  );
 
-  if (!event || !venue) {
+  // Convert SVG sections to venue sections format
+  const venueSections: VenueSection[] = useMemo(() => {
+    if (svgSections.length === 0) return [];
+    
+    const allPrices = svgSections.map(s => s.currentPrice);
+    const minPrice = Math.min(...allPrices);
+    const maxPrice = Math.max(...allPrices);
+    
+    return svgSections.map(section => ({
+      id: section.id,
+      name: section.name,
+      rows: section.rows,
+      seatsPerRow: section.seatsPerRow,
+      priceCategory: getPriceCategory(section.currentPrice, minPrice, maxPrice),
+      basePrice: section.currentPrice,
+    }));
+  }, [svgSections]);
+
+  // Get top sections for the pricing sidebar (sorted by price, limit 8)
+  const topSections = useMemo(() => {
+    return [...venueSections]
+      .sort((a, b) => b.basePrice - a.basePrice)
+      .slice(0, 8);
+  }, [venueSections]);
+
+  if (!event) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-16 text-center">
@@ -30,7 +62,8 @@ const EventDetailPage = () => {
     );
   }
 
-  const selectedSectionData = venue.sections.find(s => s.id === selectedSection);
+  const selectedSectionData = venueSections.find(s => s.id === selectedSection);
+  const selectedSVGSection = svgSections.find(s => s.id === selectedSection);
 
   const handleSeatsSelected = (seats: SelectedSeat[]) => {
     addToCart({
@@ -125,7 +158,7 @@ const EventDetailPage = () => {
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Venue</p>
-                      <p className="font-medium text-foreground">{venue.name}</p>
+                      <p className="font-medium text-foreground">{event.venueName}</p>
                     </div>
                   </div>
                 </div>
@@ -135,15 +168,33 @@ const EventDetailPage = () => {
               <div className="bg-card border border-border rounded-2xl p-6 lg:p-8">
                 <h2 className="font-display text-xl font-bold text-foreground mb-6">Select Your Seats</h2>
                 
-                {selectedSectionData ? (
+                {selectedSectionData && selectedSVGSection ? (
                   <SeatSelector
-                    section={selectedSectionData}
+                    section={{
+                      ...selectedSectionData,
+                      basePrice: selectedSVGSection.currentPrice,
+                    }}
                     onSeatsSelected={handleSeatsSelected}
                     onClose={() => setSelectedSection(null)}
                   />
+                ) : svgLoading ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+                    <p className="text-muted-foreground">Loading venue map...</p>
+                  </div>
+                ) : svgError || !svgContent ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground mb-4">
+                      Interactive venue map not available for this venue.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Please select a section from the pricing panel.
+                    </p>
+                  </div>
                 ) : (
-                  <VenueMap
-                    sections={venue.sections}
+                  <InteractiveSVGMap
+                    svgContent={svgContent}
+                    sections={svgSections}
                     selectedSection={selectedSection}
                     onSectionSelect={setSelectedSection}
                   />
@@ -162,25 +213,37 @@ const EventDetailPage = () => {
               {/* Pricing Summary */}
               <div className="bg-card border border-border rounded-2xl p-6 sticky top-24">
                 <h3 className="font-display text-lg font-bold text-foreground mb-4">Ticket Prices</h3>
-                <div className="space-y-3">
-                  {venue.sections.map((section) => (
-                    <button
-                      key={section.id}
-                      onClick={() => setSelectedSection(section.id)}
-                      className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${
-                        selectedSection === section.id
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border hover:border-primary/50 hover:bg-secondary/50'
-                      }`}
-                    >
-                      <div className="text-left">
-                        <p className="font-medium text-foreground text-sm">{section.name}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{section.priceCategory}</p>
-                      </div>
-                      <p className="font-bold text-accent">{formatPrice(section.basePrice)}</p>
-                    </button>
-                  ))}
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {topSections.length > 0 ? (
+                    topSections.map((section) => (
+                      <button
+                        key={section.id}
+                        onClick={() => setSelectedSection(section.id)}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${
+                          selectedSection === section.id
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:border-primary/50 hover:bg-secondary/50'
+                        }`}
+                      >
+                        <div className="text-left">
+                          <p className="font-medium text-foreground text-sm">{section.name}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{section.priceCategory}</p>
+                        </div>
+                        <p className="font-bold text-accent">{formatPrice(section.basePrice)}</p>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground">Loading sections...</p>
+                    </div>
+                  )}
                 </div>
+
+                {venueSections.length > 8 && (
+                  <p className="text-xs text-muted-foreground text-center mt-3">
+                    + {venueSections.length - 8} more sections available on map
+                  </p>
+                )}
 
                 <div className="mt-6 pt-6 border-t border-border space-y-3">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
