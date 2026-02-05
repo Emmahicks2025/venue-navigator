@@ -74,17 +74,20 @@ export const InteractiveSVGMap = ({
         opacity: 0.4;
         cursor: not-allowed;
       }
+      .section-label {
+        pointer-events: none;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-weight: 600;
+        fill: white;
+        text-anchor: middle;
+        dominant-baseline: central;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+      }
     `;
     
-    // AGGRESSIVE REMOVAL: Remove ALL text elements except those we want to keep
-    const allowedTextContent = ['stage', 'floor', 'court', 'field', 'ice', 'ring', 'pit'];
-    
+    // AGGRESSIVE REMOVAL: Remove ALL text elements
     svg.querySelectorAll('text, tspan').forEach(textEl => {
-      const content = (textEl.textContent || '').toLowerCase().trim();
-      const shouldKeep = allowedTextContent.some(allowed => content.includes(allowed));
-      if (!shouldKeep) {
-        textEl.remove();
-      }
+      textEl.remove();
     });
     
     // Remove foreignObject elements (often contain overlays)
@@ -97,10 +100,153 @@ export const InteractiveSVGMap = ({
       }
     });
 
+    // Add section labels programmatically
+    svg.querySelectorAll('g[data-section-id]').forEach(sectionGroup => {
+      const sectionId = sectionGroup.getAttribute('data-section-id') || '';
+      
+      // Get the bounding box of the section's shape
+      const shape = sectionGroup.querySelector('path, polygon, rect, circle, ellipse');
+      if (!shape) return;
+      
+      // Get bounding box from the shape
+      let cx = 0, cy = 0, width = 0, height = 0;
+      
+      if (shape.tagName === 'rect') {
+        const x = parseFloat(shape.getAttribute('x') || '0');
+        const y = parseFloat(shape.getAttribute('y') || '0');
+        width = parseFloat(shape.getAttribute('width') || '0');
+        height = parseFloat(shape.getAttribute('height') || '0');
+        cx = x + width / 2;
+        cy = y + height / 2;
+      } else if (shape.tagName === 'circle') {
+        cx = parseFloat(shape.getAttribute('cx') || '0');
+        cy = parseFloat(shape.getAttribute('cy') || '0');
+        const r = parseFloat(shape.getAttribute('r') || '0');
+        width = height = r * 2;
+      } else if (shape.tagName === 'ellipse') {
+        cx = parseFloat(shape.getAttribute('cx') || '0');
+        cy = parseFloat(shape.getAttribute('cy') || '0');
+        width = parseFloat(shape.getAttribute('rx') || '0') * 2;
+        height = parseFloat(shape.getAttribute('ry') || '0') * 2;
+      } else {
+        // For path/polygon, try to get bounds from d attribute or points
+        const bbox = getPathBounds(shape);
+        cx = bbox.cx;
+        cy = bbox.cy;
+        width = bbox.width;
+        height = bbox.height;
+      }
+      
+      // Calculate font size based on section size (with min/max constraints)
+      const minDimension = Math.min(width, height);
+      let fontSize = Math.max(6, Math.min(14, minDimension * 0.35));
+      
+      // Get a short label for the section
+      const label = getShortLabel(sectionId);
+      
+      // Adjust font size for longer labels
+      if (label.length > 4) {
+        fontSize = fontSize * 0.8;
+      }
+      if (label.length > 6) {
+        fontSize = fontSize * 0.8;
+      }
+      
+      // Create the text element
+      const text = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('class', 'section-label');
+      text.setAttribute('x', String(cx));
+      text.setAttribute('y', String(cy));
+      text.setAttribute('font-size', String(fontSize));
+      text.textContent = label;
+      
+      sectionGroup.appendChild(text);
+    });
+
     svg.insertBefore(style, svg.firstChild);
 
     return new XMLSerializer().serializeToString(doc);
   }, [svgContent]);
+  
+  // Helper function to get bounds of path/polygon elements
+  const getPathBounds = (shape: Element): { cx: number; cy: number; width: number; height: number } => {
+    let points: { x: number; y: number }[] = [];
+    
+    if (shape.tagName === 'polygon') {
+      const pointsAttr = shape.getAttribute('points') || '';
+      const pairs = pointsAttr.trim().split(/[\s,]+/);
+      for (let i = 0; i < pairs.length - 1; i += 2) {
+        points.push({ x: parseFloat(pairs[i]), y: parseFloat(pairs[i + 1]) });
+      }
+    } else if (shape.tagName === 'path') {
+      // Extract numbers from path d attribute for rough bounds
+      const d = shape.getAttribute('d') || '';
+      const numbers = d.match(/-?\d+\.?\d*/g) || [];
+      for (let i = 0; i < numbers.length - 1; i += 2) {
+        const x = parseFloat(numbers[i]);
+        const y = parseFloat(numbers[i + 1]);
+        if (!isNaN(x) && !isNaN(y)) {
+          points.push({ x, y });
+        }
+      }
+    }
+    
+    if (points.length === 0) {
+      return { cx: 0, cy: 0, width: 50, height: 50 };
+    }
+    
+    const xs = points.map(p => p.x);
+    const ys = points.map(p => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    
+    return {
+      cx: (minX + maxX) / 2,
+      cy: (minY + maxY) / 2,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
+  };
+  
+  // Get a short display label from section ID
+  const getShortLabel = (sectionId: string): string => {
+    // Remove common prefixes
+    let label = sectionId
+      .replace(/^(SECTION[-_]?|SEC[-_]?|ZONE[-_]?)/i, '')
+      .replace(/[-_]GROUP$/i, '')
+      .replace(/[-_]/g, ' ')
+      .trim();
+    
+    // If it's just a number, return it
+    if (/^\d+$/.test(label)) {
+      return label;
+    }
+    
+    // If it's a letter+number combo (like A1, B2), return it
+    if (/^[A-Z]\d+$/i.test(label)) {
+      return label.toUpperCase();
+    }
+    
+    // For longer names, abbreviate
+    const parts = label.split(/\s+/);
+    if (parts.length === 1) {
+      // Single word - take first 4 chars
+      return label.substring(0, 4).toUpperCase();
+    }
+    
+    // Multiple words - take initials + numbers
+    let result = '';
+    for (const part of parts) {
+      if (/^\d+$/.test(part)) {
+        result += part;
+      } else {
+        result += part[0];
+      }
+    }
+    return result.toUpperCase();
+  };
 
   // Handle section interactions
   useEffect(() => {
