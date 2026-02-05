@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Search, ShoppingCart, User, Menu, X, Ticket } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, X, Ticket, Shield, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
@@ -15,6 +16,7 @@ const navLinks = [
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { getTotalItems } = useCart();
+  const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
   const totalItems = getTotalItems();
 
@@ -71,9 +73,33 @@ export const Header = () => {
               </Button>
             </Link>
 
-            <Button variant="ghost" size="icon" className="hidden lg:flex text-muted-foreground hover:text-foreground">
-              <User className="w-5 h-5" />
-            </Button>
+            {/* Admin button - only visible for admins */}
+            {isAdmin && (
+              <Link to="/admin">
+                <Button variant="ghost" size="icon" className="text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10">
+                  <Shield className="w-5 h-5" />
+                </Button>
+              </Link>
+            )}
+
+            {/* Auth button */}
+            {user ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={signOut}
+                title="Sign Out"
+              >
+                <LogOut className="w-5 h-5" />
+              </Button>
+            ) : (
+              <Link to="/auth">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                  <User className="w-5 h-5" />
+                </Button>
+              </Link>
+            )}
 
             {/* Mobile Menu Toggle */}
             <Button
@@ -107,6 +133,31 @@ export const Header = () => {
                 {link.label}
               </Link>
             ))}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="px-4 py-3 text-sm font-medium rounded-lg text-yellow-500 hover:bg-yellow-500/10 transition-all duration-200"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Admin Panel
+              </Link>
+            )}
+            {user ? (
+              <button
+                onClick={() => { signOut(); setIsMenuOpen(false); }}
+                className="px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary text-left transition-all duration-200"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                to="/auth"
+                className="px-4 py-3 text-sm font-medium rounded-lg text-primary hover:bg-primary/10 transition-all duration-200"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+            )}
           </nav>
         </div>
       )}
