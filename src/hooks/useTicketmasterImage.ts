@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import localPerformerImages, { localCategoryImages } from '@/assets/performers';
 
 const TICKETMASTER_API_KEY = 'OFsfv5aibhR5AiIYAGsFCUPd6Ef8AR9A';
 const DISCOVERY_API_URL = 'https://app.ticketmaster.com/discovery/v2';
@@ -106,8 +106,10 @@ export function useTicketmasterImage(
   existingImage: string | undefined,
   category: string
 ): { imageUrl: string; isLoading: boolean } {
-  // Use the existing image directly - no API calls for better performance
-  const imageUrl = existingImage || getDefaultCategoryImage(category);
+  // Priority: local bundled image > existing external image > category default
+  const localImage = localPerformerImages[performer];
+  const categoryDefault = localCategoryImages[category as keyof typeof localCategoryImages];
+  const imageUrl = localImage || existingImage || categoryDefault || getDefaultCategoryImage(category);
   return { imageUrl, isLoading: false };
 }
 
