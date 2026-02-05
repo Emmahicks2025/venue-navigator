@@ -99,49 +99,16 @@ async function fetchTicketmasterImage(searchTerm: string): Promise<string | null
   }
 }
 
-// Hook to get performer image with Ticketmaster fallback
+// Hook to get performer image - uses static images for fast loading
+// API fetching is disabled for performance - images are pre-mapped
 export function useTicketmasterImage(
   performer: string,
   existingImage: string | undefined,
   category: string
 ): { imageUrl: string; isLoading: boolean } {
-  const [ticketmasterImage, setTicketmasterImage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Check if existing image is a placeholder/generic image
-  const isPlaceholder = !existingImage || 
-    existingImage.includes('unsplash.com') ||
-    existingImage.includes('placeholder');
-
-  useEffect(() => {
-    // Only fetch if we have a placeholder image
-    if (!isPlaceholder || !performer) {
-      return;
-    }
-
-    const cacheKey = performer.toLowerCase().trim();
-    
-    // Check cache synchronously
-    if (cacheKey in imageCache) {
-      setTicketmasterImage(imageCache[cacheKey]);
-      return;
-    }
-
-    setIsLoading(true);
-    
-    fetchTicketmasterImage(performer)
-      .then(url => {
-        setTicketmasterImage(url);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [performer, isPlaceholder]);
-
-  // Return Ticketmaster image if available, otherwise existing image
-  const imageUrl = ticketmasterImage || existingImage || getDefaultCategoryImage(category);
-
-  return { imageUrl, isLoading };
+  // Use the existing image directly - no API calls for better performance
+  const imageUrl = existingImage || getDefaultCategoryImage(category);
+  return { imageUrl, isLoading: false };
 }
 
 // Batch fetch images for multiple performers
