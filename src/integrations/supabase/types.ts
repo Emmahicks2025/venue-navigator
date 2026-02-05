@@ -14,6 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
+      events: {
+        Row: {
+          away_team: string | null
+          category: string
+          created_at: string
+          date: string
+          description: string | null
+          group_name: string | null
+          home_team: string | null
+          id: string
+          is_featured: boolean
+          match_number: number | null
+          max_price: number
+          min_price: number
+          name: string
+          performer: string
+          performer_image: string | null
+          round: string | null
+          source: string | null
+          svg_map_name: string | null
+          ticket_url: string | null
+          time: string
+          updated_at: string
+          venue_city: string
+          venue_name: string
+          venue_state: string | null
+        }
+        Insert: {
+          away_team?: string | null
+          category?: string
+          created_at?: string
+          date: string
+          description?: string | null
+          group_name?: string | null
+          home_team?: string | null
+          id?: string
+          is_featured?: boolean
+          match_number?: number | null
+          max_price?: number
+          min_price?: number
+          name: string
+          performer: string
+          performer_image?: string | null
+          round?: string | null
+          source?: string | null
+          svg_map_name?: string | null
+          ticket_url?: string | null
+          time?: string
+          updated_at?: string
+          venue_city?: string
+          venue_name: string
+          venue_state?: string | null
+        }
+        Update: {
+          away_team?: string | null
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          group_name?: string | null
+          home_team?: string | null
+          id?: string
+          is_featured?: boolean
+          match_number?: number | null
+          max_price?: number
+          min_price?: number
+          name?: string
+          performer?: string
+          performer_image?: string | null
+          round?: string | null
+          source?: string | null
+          svg_map_name?: string | null
+          ticket_url?: string | null
+          time?: string
+          updated_at?: string
+          venue_city?: string
+          venue_name?: string
+          venue_state?: string | null
+        }
+        Relationships: []
+      }
+      venue_maps: {
+        Row: {
+          capacity: number | null
+          created_at: string
+          id: string
+          svg_content: string
+          updated_at: string
+          venue_city: string | null
+          venue_country: string | null
+          venue_name: string
+          venue_state: string | null
+          venue_type: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          svg_content: string
+          updated_at?: string
+          venue_city?: string | null
+          venue_country?: string | null
+          venue_name: string
+          venue_state?: string | null
+          venue_type?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          svg_content?: string
+          updated_at?: string
+          venue_city?: string | null
+          venue_country?: string | null
+          venue_name?: string
+          venue_state?: string | null
+          venue_type?: string | null
+        }
+        Relationships: []
+      }
       world_cup_events: {
         Row: {
           available_tickets: number | null
