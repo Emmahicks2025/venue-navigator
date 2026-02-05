@@ -145,8 +145,15 @@ export const TicketList = ({ section, svgSection, onTicketsSelected, onClose }: 
                   <p className="text-xs text-muted-foreground/70">
                     Seats: {ticket.availableSeats.join(', ')}
                   </p>
-                  {ticket.note && (
+                  {ticket.seats > 1 && (
                     <div className="flex items-center gap-1 text-xs text-success mt-1">
+                      <span className="inline-flex items-center gap-1 bg-success/15 text-success px-2 py-0.5 rounded-full font-medium">
+                        ✓ Seated together
+                      </span>
+                    </div>
+                  )}
+                  {ticket.note && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                       <Info className="w-3 h-3" />
                       <span>{ticket.note}</span>
                     </div>
