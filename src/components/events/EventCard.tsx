@@ -4,6 +4,7 @@ import { Event } from '@/types';
 import { formatShortDate, formatDate, formatTime, formatPrice } from '@/data/events';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useTicketmasterImage } from '@/hooks/useTicketmasterImage';
 
 interface EventCardProps {
   event: Event;
@@ -13,6 +14,7 @@ interface EventCardProps {
 
 export const EventCard = ({ event, variant = 'default', className }: EventCardProps) => {
   const { month, day } = formatShortDate(event.date);
+  const { imageUrl } = useTicketmasterImage(event.performer, event.performerImage, event.category);
 
   if (variant === 'compact') {
     return (
@@ -51,7 +53,7 @@ export const EventCard = ({ event, variant = 'default', className }: EventCardPr
       >
         <div className="relative aspect-[4/3] overflow-hidden">
           <img
-            src={event.performerImage}
+            src={imageUrl}
             alt={event.performer}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
@@ -107,7 +109,7 @@ export const EventCard = ({ event, variant = 'default', className }: EventCardPr
       <div className="flex flex-col sm:flex-row">
         <div className="relative sm:w-48 aspect-video sm:aspect-square overflow-hidden">
           <img
-            src={event.performerImage}
+            src={imageUrl}
             alt={event.performer}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
