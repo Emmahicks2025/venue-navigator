@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, MapPin, Calendar, Sparkles } from 'lucide-react';
+import { MapPin, Calendar, Sparkles } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { EventCard } from '@/components/events/EventCard';
 import { CategoryTabs } from '@/components/events/CategoryTabs';
 import { Button } from '@/components/ui/button';
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
 import { events, getFeaturedEvents, getEventsByCategory, formatPrice } from '@/data/events';
 import { getEventsByCity } from '@/data/eventsData';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -13,30 +13,12 @@ import heroImage from '@/assets/hero-stadium.jpg';
 
 const Index = () => {
   const featuredEvents = getFeaturedEvents();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const carouselRef = useRef<HTMLDivElement>(null);
   const { location, loading: locationLoading } = useUserLocation();
 
   // Get events based on user's city or fallback to all events
   const localEvents = location?.city ? getEventsByCity(location.city) : [];
   const upcomingEvents = localEvents.length > 0 ? localEvents.slice(0, 6) : events.slice(0, 6);
   const hasLocalEvents = localEvents.length > 0;
-
-  // Auto-advance carousel
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % featuredEvents.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [featuredEvents.length]);
-
-  const scrollCarousel = (direction: 'left' | 'right') => {
-    if (direction === 'left') {
-      setCurrentSlide((prev) => (prev - 1 + featuredEvents.length) % featuredEvents.length);
-    } else {
-      setCurrentSlide((prev) => (prev + 1) % featuredEvents.length);
-    }
-  };
 
   const concertEvents = getEventsByCategory('concerts').slice(0, 4);
   const sportsEvents = getEventsByCategory('sports').slice(0, 4);
@@ -94,53 +76,26 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">Don't miss these trending experiences</p>
               </div>
             </div>
-
-            <div className="hidden sm:flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => scrollCarousel('left')}
-                className="rounded-full border-border hover:bg-secondary"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => scrollCarousel('right')}
-                className="rounded-full border-border hover:bg-secondary"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </Button>
-            </div>
           </div>
 
-          {/* Carousel */}
-          <div className="relative overflow-hidden" ref={carouselRef}>
-            <div
-              className="flex transition-transform duration-500 ease-out gap-6"
-              style={{ transform: `translateX(-${currentSlide * (100 / 3)}%)` }}
-            >
+          {/* Carousel with touch support */}
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
               {featuredEvents.map((event) => (
-                <div key={event.id} className="flex-shrink-0 w-full sm:w-1/2 lg:w-1/3">
+                <CarouselItem key={event.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
                   <EventCard event={event} variant="featured" />
-                </div>
+                </CarouselItem>
               ))}
-            </div>
-          </div>
-
-          {/* Carousel Dots */}
-          <div className="flex justify-center gap-2 mt-6">
-            {featuredEvents.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === currentSlide ? 'bg-primary w-6' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
-              />
-            ))}
-          </div>
+            </CarouselContent>
+            <CarouselPrevious className="hidden sm:flex -left-4 lg:-left-12" />
+            <CarouselNext className="hidden sm:flex -right-4 lg:-right-12" />
+          </Carousel>
         </div>
       </section>
 
