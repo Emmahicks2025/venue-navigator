@@ -14,7 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      world_cup_events: {
+        Row: {
+          created_at: string
+          event_date: string
+          event_time: string | null
+          id: string
+          image_url: string | null
+          max_price: number | null
+          min_price: number | null
+          name: string
+          status: string | null
+          ticketmaster_id: string
+          ticketmaster_url: string | null
+          updated_at: string
+          venue_city: string
+          venue_country: string | null
+          venue_lat: number | null
+          venue_lon: number | null
+          venue_name: string
+          venue_state: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_date: string
+          event_time?: string | null
+          id?: string
+          image_url?: string | null
+          max_price?: number | null
+          min_price?: number | null
+          name: string
+          status?: string | null
+          ticketmaster_id: string
+          ticketmaster_url?: string | null
+          updated_at?: string
+          venue_city: string
+          venue_country?: string | null
+          venue_lat?: number | null
+          venue_lon?: number | null
+          venue_name: string
+          venue_state?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          event_time?: string | null
+          id?: string
+          image_url?: string | null
+          max_price?: number | null
+          min_price?: number | null
+          name?: string
+          status?: string | null
+          ticketmaster_id?: string
+          ticketmaster_url?: string | null
+          updated_at?: string
+          venue_city?: string
+          venue_country?: string | null
+          venue_lat?: number | null
+          venue_lon?: number | null
+          venue_name?: string
+          venue_state?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
