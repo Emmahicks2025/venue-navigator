@@ -30,7 +30,7 @@ const topArtists: Artist[] = [
   },
   {
     name: 'Drake',
-    image: 'https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=600&h=600&fit=crop&crop=faces',
+    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&h=600&fit=crop&crop=faces',
     genre: 'Hip-Hop',
     searchQuery: 'Drake',
   },
@@ -48,7 +48,7 @@ const topArtists: Artist[] = [
   },
   {
     name: 'Kendrick Lamar',
-    image: 'https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=600&h=600&fit=crop&crop=faces&q=80',
+    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&h=600&fit=crop&crop=faces',
     genre: 'Hip-Hop',
     searchQuery: 'Kendrick Lamar',
   },
