@@ -62,7 +62,7 @@ export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) =
             'flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-xs whitespace-nowrap transition-all duration-300 snap-start shrink-0 ring-2 ring-offset-1 ring-offset-background',
             activeCategory === 'world-cup'
               ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/40 ring-emerald-400'
-              : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/25 ring-yellow-400/60 hover:shadow-lg hover:shadow-emerald-500/40'
+              : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/25 ring-yellow-400/60 hover:shadow-lg hover:shadow-emerald-500/40 animate-glow-pulse'
           )}
         >
           <Trophy className="w-4 h-4 text-yellow-300" />

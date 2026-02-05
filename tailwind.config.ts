@@ -100,6 +100,10 @@ export default {
           from: { opacity: "0", transform: "scale(0.95)" },
           to: { opacity: "1", transform: "scale(1)" },
         },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 8px rgba(16, 185, 129, 0.3), 0 0 0 0 rgba(250, 204, 21, 0)" },
+          "50%": { boxShadow: "0 0 16px rgba(16, 185, 129, 0.5), 0 0 8px 2px rgba(250, 204, 21, 0.2)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -108,6 +112,7 @@ export default {
         "slide-up": "slide-up 0.5s ease-out forwards",
         "slide-in-right": "slide-in-right 0.4s ease-out forwards",
         "scale-in": "scale-in 0.3s ease-out forwards",
+        "glow-pulse": "glow-pulse 2.5s ease-in-out infinite",
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
