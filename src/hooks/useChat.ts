@@ -86,29 +86,43 @@ export function useChat() {
 
   const lookupOrder = async (orderNumber: string): Promise<string | null> => {
     try {
+      console.log('[Chat] Looking up order:', orderNumber);
       const ordersRef = collection(db, 'orders');
       const q = query(ordersRef, where('order_number', '==', orderNumber));
       const snap = await getDocs(q);
-      if (snap.empty) return null;
-      
-      const order = snap.docs[0].data();
-      const ticketsRef = collection(db, 'tickets');
-      const tq = query(ticketsRef, where('order_id', '==', snap.docs[0].id));
-      const tSnap = await getDocs(tq);
-      const tickets = tSnap.docs.map(d => d.data());
-      
-      let context = `Order #${order.order_number} — Status: ${order.status}, Total: $${order.total}`;
-      if (order.billing_email) context += `, Email: ${order.billing_email}`;
-      if (tickets.length > 0) {
-        context += `\nTickets (${tickets.length}):`;
-        tickets.forEach((t: any) => {
-          context += `\n- ${t.event_name} at ${t.venue_name}, ${t.section_name} Row ${t.row_name} Seat ${t.seat_number} ($${t.price})`;
-        });
+      console.log('[Chat] Order query result:', snap.size, 'docs found');
+      if (snap.empty) {
+        // Try case-insensitive by uppercasing
+        const q2 = query(ordersRef, where('order_number', '==', orderNumber.toUpperCase()));
+        const snap2 = await getDocs(q2);
+        console.log('[Chat] Uppercase retry:', snap2.size, 'docs found');
+        if (snap2.empty) return null;
+        return buildOrderContext(snap2.docs[0]);
       }
-      return context;
-    } catch {
+      return buildOrderContext(snap.docs[0]);
+    } catch (err) {
+      console.error('[Chat] Order lookup error:', err);
       return null;
     }
+  };
+
+  const buildOrderContext = async (orderDoc: any): Promise<string> => {
+    const order = orderDoc.data();
+    const ticketsRef = collection(db, 'tickets');
+    const tq = query(ticketsRef, where('order_id', '==', orderDoc.id));
+    const tSnap = await getDocs(tq);
+    console.log('[Chat] Tickets for order:', tSnap.size);
+    const tickets = tSnap.docs.map(d => d.data());
+    
+    let context = `Order #${order.order_number} — Status: ${order.status}, Total: $${order.total}`;
+    if (order.billing_email) context += `, Email: ${order.billing_email}`;
+    if (tickets.length > 0) {
+      context += `\nTickets (${tickets.length}):`;
+      tickets.forEach((t: any) => {
+        context += `\n- ${t.event_name} at ${t.venue_name}, ${t.section_name} Row ${t.row_name} Seat ${t.seat_number} ($${t.price})`;
+      });
+    }
+    return context;
   };
 
   const addLocalMessage = (role: ChatMessage['role'], content: string): ChatMessage => {
@@ -147,7 +161,8 @@ export function useChat() {
         .map(m => ({ role: m.role === 'admin' ? 'assistant' : m.role, content: m.content }));
 
       let orderContext: string | null = null;
-      const orderMatch = content.match(/TO\d{5,}/i) || content.match(/ORD-[A-Z0-9]+/i);
+      // Match TO or TV prefix (TV was legacy format)
+      const orderMatch = content.match(/T[OV]\d{5,}/i) || content.match(/ORD-[A-Z0-9]+/i);
       if (orderMatch) {
         orderContext = await lookupOrder(orderMatch[0]);
       }
