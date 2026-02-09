@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ const AuthPage = () => {
   const [otpCode, setOtpCode] = useState('');
   const [newUserId, setNewUserId] = useState('');
   const [sendingCode, setSendingCode] = useState(false);
+  const isSigningUp = useRef(false);
   const { user, loading, signIn, signUp, sendPhoneVerification, verifyPhoneCode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,7 +32,7 @@ const AuthPage = () => {
   const redirectTo = new URLSearchParams(location.search).get('redirect') || '/';
 
   useEffect(() => {
-    if (!loading && user && signupStep === 'form') {
+    if (!loading && user && signupStep === 'form' && !isSigningUp.current) {
       navigate(redirectTo);
     }
   }, [user, loading, navigate, redirectTo, signupStep]);
@@ -77,8 +78,10 @@ const AuthPage = () => {
         }
         toast.success('Signed in successfully!');
       } else {
+        isSigningUp.current = true;
         const { error, user: newUser } = await signUp(email, password, { firstName, lastName, phone: formatPhoneNumber(phone) });
         if (error) {
+          isSigningUp.current = false;
           if (error.message.includes('already-in-use')) {
             toast.error('This email is already registered. Try signing in.');
           } else {
@@ -98,6 +101,7 @@ const AuthPage = () => {
           setSendingCode(false);
 
           if (phoneError) {
+            isSigningUp.current = false;
             toast.error('Account created but phone verification failed: ' + phoneError.message);
             setSignupStep('form');
             setIsLogin(true);
@@ -130,6 +134,7 @@ const AuthPage = () => {
         return;
       }
       toast.success('Phone verified! Welcome aboard!');
+      isSigningUp.current = false;
       setSignupStep('form');
       navigate(redirectTo);
     } finally {
