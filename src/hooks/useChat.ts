@@ -32,26 +32,31 @@ export function useChat() {
   const getOrCreateSession = useCallback(async () => {
     if (!user) return null;
     
-    const sid = `chat_${user.uid}`;
-    const sessionRef = doc(db, 'chat_sessions', sid);
-    const snap = await getDoc(sessionRef);
-    
-    if (!snap.exists()) {
-      await setDoc(sessionRef, {
-        user_id: user.uid,
-        user_email: user.email,
-        mode: 'ai',
-        admin_id: null,
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp(),
-        last_message: null,
-      });
-    } else {
-      setSessionMode(snap.data().mode || 'ai');
+    try {
+      const sid = `chat_${user.uid}`;
+      const sessionRef = doc(db, 'chat_sessions', sid);
+      const snap = await getDoc(sessionRef);
+      
+      if (!snap.exists()) {
+        await setDoc(sessionRef, {
+          user_id: user.uid,
+          user_email: user.email,
+          mode: 'ai',
+          admin_id: null,
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp(),
+          last_message: null,
+        });
+      } else {
+        setSessionMode(snap.data().mode || 'ai');
+      }
+      
+      setSessionId(sid);
+      return sid;
+    } catch (e) {
+      console.warn('Chat session init failed:', e);
+      return null;
     }
-    
-    setSessionId(sid);
-    return sid;
   }, [user]);
 
   // Subscribe to messages
@@ -70,6 +75,8 @@ export function useChat() {
         created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString(),
       } as ChatMessage));
       setMessages(msgs);
+    }, (err) => {
+      console.warn('Chat messages subscription error:', err);
     });
 
     unsubRef.current = unsub;
@@ -85,6 +92,8 @@ export function useChat() {
       if (snap.exists()) {
         setSessionMode(snap.data().mode || 'ai');
       }
+    }, (err) => {
+      console.warn('Chat session subscription error:', err);
     });
     return () => unsub();
   }, [sessionId]);
