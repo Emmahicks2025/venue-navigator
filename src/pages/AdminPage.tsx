@@ -21,6 +21,8 @@ const AdminPage = () => {
     }
   }, [user, loading, navigate]);
 
+  const [seedingAll, setSeedingAll] = useState(false);
+
   const handleSeedWorldCup = async () => {
     setSeeding(true);
     try {
@@ -32,6 +34,20 @@ const AdminPage = () => {
       toast.error(error.message || 'Failed to seed World Cup events');
     } finally {
       setSeeding(false);
+    }
+  };
+
+  const handleSeedAllEvents = async () => {
+    setSeedingAll(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('seed-all-events');
+      if (error) throw error;
+      toast.success(data.message || `Seeded ${data.seeded} events successfully!`);
+    } catch (error: any) {
+      console.error('Error seeding all events:', error);
+      toast.error(error.message || 'Failed to seed events');
+    } finally {
+      setSeedingAll(false);
     }
   };
 
@@ -65,15 +81,26 @@ const AdminPage = () => {
             <h1 className="font-display text-3xl font-bold text-foreground">Event Management</h1>
             <p className="text-muted-foreground mt-1">Add events, upload SVG maps, and manage ticket data</p>
           </div>
-          <Button 
-            onClick={handleSeedWorldCup} 
-            disabled={seeding}
-            variant="outline"
-            className="gap-2"
-          >
-            <RefreshCw className={`w-4 h-4 ${seeding ? 'animate-spin' : ''}`} />
-            {seeding ? 'Seeding...' : 'Seed World Cup Data'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleSeedAllEvents} 
+              disabled={seedingAll}
+              variant="outline"
+              className="gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${seedingAll ? 'animate-spin' : ''}`} />
+              {seedingAll ? 'Seeding...' : 'Seed All Events'}
+            </Button>
+            <Button 
+              onClick={handleSeedWorldCup} 
+              disabled={seeding}
+              variant="outline"
+              className="gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${seeding ? 'animate-spin' : ''}`} />
+              {seeding ? 'Seeding...' : 'Seed World Cup Data'}
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="events" className="space-y-6">
