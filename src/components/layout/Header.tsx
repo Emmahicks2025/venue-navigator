@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Search, ShoppingCart, User, Menu, X, Shield, LogOut, Trophy } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, X, Shield, LogOut, Trophy, DollarSign } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
@@ -58,6 +58,14 @@ export const Header = () => {
               FIFA World Cup
             </Link>
           </nav>
+
+          {/* Sell Tickets CTA - Desktop */}
+          <Link to="/sell" className="hidden lg:flex">
+            <Button className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-1.5 btn-accent-glow">
+              <DollarSign className="w-4 h-4" />
+              Sell Tickets
+            </Button>
+          </Link>
 
           {/* Actions */}
           <div className="flex items-center gap-2 lg:gap-4">
@@ -149,6 +157,14 @@ export const Header = () => {
                 {link.label}
               </Link>
             ))}
+            <Link
+              to="/sell"
+              className="px-4 py-3 text-sm font-bold rounded-lg transition-all duration-200 flex items-center gap-2 bg-accent text-accent-foreground shadow-md"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <DollarSign className="w-4 h-4" />
+              Sell Tickets
+            </Link>
             <Link
               to="/events/world-cup"
               className={cn(
