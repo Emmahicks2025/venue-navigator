@@ -119,6 +119,21 @@ export const Header = () => {
       {isMenuOpen && (
         <div className="lg:hidden glass-strong border-t border-border animate-slide-up">
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
+            {user && (
+              <Link
+                to="/dashboard"
+                className={cn(
+                  'px-4 py-3 text-sm font-bold rounded-lg transition-all duration-200 flex items-center gap-2',
+                  location.pathname === '/dashboard'
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                    : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'
+                )}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <User className="w-4 h-4" />
+                My Dashboard
+              </Link>
+            )}
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -134,15 +149,6 @@ export const Header = () => {
                 {link.label}
               </Link>
             ))}
-            {user && (
-              <Link
-                to="/dashboard"
-                className="px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                My Dashboard
-              </Link>
-            )}
             <Link
               to="/events/world-cup"
               className={cn(
