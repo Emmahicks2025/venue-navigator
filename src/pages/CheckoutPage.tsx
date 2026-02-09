@@ -91,7 +91,7 @@ const CheckoutPage = () => {
         const { data: order, error: orderError } = await supabase
           .from('orders')
           .insert({
-            user_id: user.id,
+            user_id: user.uid,
             order_number: orderNumber,
             status: 'confirmed',
             subtotal: totalPrice,
@@ -113,7 +113,7 @@ const CheckoutPage = () => {
         const ticketInserts = items.flatMap((item) =>
           item.seats.map((seat) => ({
             order_id: order.id,
-            user_id: user.id,
+            user_id: user.uid,
             event_id: item.eventId,
             event_name: item.eventName,
             event_date: item.eventDate,
@@ -139,7 +139,7 @@ const CheckoutPage = () => {
           await supabase
             .from('profiles')
             .update({ first_name: formData.firstName, last_name: formData.lastName })
-            .eq('user_id', user.id);
+            .eq('user_id', user.uid);
         }
       }
 
