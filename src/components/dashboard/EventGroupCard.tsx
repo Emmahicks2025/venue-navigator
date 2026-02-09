@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Clock, Ticket, Send, QrCode, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -180,15 +179,6 @@ export const EventGroupCard = ({ eventId, tickets, isPast = false }: EventGroupC
               </div>
             ))}
 
-            {/* View Event Details link */}
-            <div className="p-3 text-center">
-              <Link
-                to={`/event/${eventId}`}
-                className="text-sm text-primary hover:underline font-medium"
-              >
-                View Event Details →
-              </Link>
-            </div>
           </div>
         )}
       </div>
