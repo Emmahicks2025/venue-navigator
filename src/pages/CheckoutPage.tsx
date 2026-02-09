@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, Lock, Check, ChevronLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -10,15 +10,18 @@ import { formatPrice, formatDate } from '@/data/events';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { Loader2 } from 'lucide-react';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const { items, getTotalPrice, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { data: profile } = useUserProfile();
   const [isProcessing, setIsProcessing] = useState(false);
   const submittingRef = useRef(false);
   const [formData, setFormData] = useState({
-    email: user?.email || '',
+    email: '',
     firstName: '',
     lastName: '',
     cardNumber: '',
@@ -29,13 +32,41 @@ const CheckoutPage = () => {
     zipCode: '',
   });
 
+  // Auto-fill from user profile when it loads
+  useEffect(() => {
+    if (user || profile) {
+      setFormData(prev => ({
+        ...prev,
+        email: prev.email || user?.email || '',
+        firstName: prev.firstName || profile?.first_name || '',
+        lastName: prev.lastName || profile?.last_name || '',
+      }));
+    }
+  }, [user, profile]);
+
   const totalPrice = getTotalPrice();
   const serviceFee = totalPrice * 0.1;
   const grandTotal = totalPrice + serviceFee;
 
+  // Redirect to auth if not logged in
+  if (!authLoading && !user) {
+    navigate('/auth?redirect=/checkout');
+    return null;
+  }
+
   if (items.length === 0) {
     navigate('/cart');
     return null;
+  }
+
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center py-32">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        </div>
+      </Layout>
+    );
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,6 +133,14 @@ const CheckoutPage = () => {
           .insert(ticketInserts);
 
         if (ticketsError) throw ticketsError;
+
+        // Also update profile name if it was empty
+        if (profile && !profile.first_name && formData.firstName) {
+          await supabase
+            .from('profiles')
+            .update({ first_name: formData.firstName, last_name: formData.lastName })
+            .eq('user_id', user.id);
+        }
       }
 
       clearCart();
@@ -147,6 +186,7 @@ const CheckoutPage = () => {
                       placeholder="you@example.com"
                       required
                       className="mt-1"
+                      readOnly={!!user?.email}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
