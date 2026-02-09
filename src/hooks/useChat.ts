@@ -10,6 +10,15 @@ export interface ChatMessage {
   created_at: string;
 }
 
+const AGENT_NAMES = [
+  'Maria', 'Carlos', 'Sofia', 'Diego', 'Isabella', 'Alejandro',
+  'Gabriela', 'Miguel', 'Valentina', 'Andres', 'Camila', 'Lucas',
+  'Emily', 'James', 'Sarah', 'Michael', 'Jessica', 'David',
+  'Ashley', 'Daniel', 'Amanda', 'Brandon', 'Nicole', 'Ryan',
+];
+
+const getRandomAgentName = () => AGENT_NAMES[Math.floor(Math.random() * AGENT_NAMES.length)];
+
 let msgCounter = 0;
 
 export function useChat() {
@@ -19,6 +28,9 @@ export function useChat() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionMode, setSessionMode] = useState<'ai' | 'human'>('ai');
   const [firestoreConnected, setFirestoreConnected] = useState(false);
+  const [agentName] = useState(() => getRandomAgentName());
+  const [isTyping, setIsTyping] = useState(false);
+  const typingRef = useRef<NodeJS.Timeout | null>(null);
   const unsubRef = useRef<(() => void) | null>(null);
   const unsubSessionRef = useRef<(() => void) | null>(null);
 
@@ -209,10 +221,30 @@ export function useChat() {
       const data = await resp.json();
       const reply = data.reply || "Sorry, I couldn't process that. Please try again.";
 
-      // Add AI reply locally
-      if (!firestoreConnected) {
-        addLocalMessage('assistant', reply);
-      }
+      // Simulate typing effect — reveal words progressively
+      setIsLoading(false);
+      setIsTyping(true);
+      const words = reply.split(' ');
+      const typingMsgId = `local_${++msgCounter}`;
+      setMessages(prev => [...prev, { id: typingMsgId, role: 'assistant', content: '', created_at: new Date().toISOString() }]);
+
+      let wordIndex = 0;
+      await new Promise<void>((resolve) => {
+        const tick = () => {
+          wordIndex++;
+          const partial = words.slice(0, wordIndex).join(' ');
+          setMessages(prev => prev.map(m => m.id === typingMsgId ? { ...m, content: partial } : m));
+          if (wordIndex < words.length) {
+            const delay = 40 + Math.random() * 80; // 40-120ms per word
+            typingRef.current = setTimeout(tick, delay);
+          } else {
+            setIsTyping(false);
+            resolve();
+          }
+        };
+        const initialDelay = 300 + Math.random() * 700; // 0.3-1s before first word
+        typingRef.current = setTimeout(tick, initialDelay);
+      });
 
       // Persist AI reply to Firestore
       if (firestoreConnected && sessionId) {
@@ -283,5 +315,5 @@ export function useChat() {
     }
   }, [user]);
 
-  return { messages, isLoading, sendMessage, sessionId, sessionMode, resetSession };
+  return { messages, isLoading, isTyping, sendMessage, sessionId, sessionMode, resetSession, agentName };
 }

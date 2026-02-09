@@ -12,7 +12,7 @@ export function ChatWidget() {
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');
   const { user } = useAuth();
-  const { messages, isLoading, sendMessage, sessionMode, resetSession } = useChat();
+  const { messages, isLoading, isTyping, sendMessage, sessionMode, resetSession, agentName } = useChat();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -82,10 +82,13 @@ export function ChatWidget() {
               <MessageCircle className="w-3 h-3 text-primary-foreground" />
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-primary-foreground">TixOrbit Help</h3>
-              <p className="text-[9px] text-primary-foreground/60">
-                {sessionMode === 'human' ? 'Live Agent' : 'Typically replies instantly'}
-              </p>
+              <h3 className="text-xs font-semibold text-primary-foreground">{agentName} · TixOrbit</h3>
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                <p className="text-[9px] text-primary-foreground/60">
+                  {sessionMode === 'human' ? 'Live Agent' : 'Online'}
+                </p>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -111,7 +114,7 @@ export function ChatWidget() {
           ) : messages.length === 0 && !isLoading ? (
             <div className="flex flex-col gap-2.5 pt-2">
               {/* Welcome message as a chat bubble */}
-              <ChatMessage role="assistant" content="Hi there! 👋 Welcome to TixOrbit. How can I help you today?" />
+              <ChatMessage role="assistant" content={`Hi there! 👋 I'm ${agentName}. Welcome to TixOrbit. How can I help you today?`} />
               <div className="flex flex-wrap gap-1.5 pl-9">
                 {['Look up my order', 'Find event tickets', 'World Cup 2026', 'Seating help'].map(q => (
                   <button
@@ -135,10 +138,13 @@ export function ChatWidget() {
                     <Loader2 className="w-3 h-3 text-muted-foreground animate-spin" />
                   </div>
                   <div className="bg-secondary rounded-xl rounded-tl-sm px-3 py-2">
-                    <div className="flex gap-1">
-                      <span className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-muted-foreground">{agentName} is typing</span>
+                      <div className="flex gap-0.5">
+                        <span className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
                     </div>
                   </div>
                 </div>
