@@ -86,6 +86,8 @@ const EventDetailPage = () => {
       eventName: event.name,
       eventDate: event.date,
       venueName: event.venue_name,
+      performer: event.performer,
+      performerImage: event.performer_image || '',
       seats,
     });
     toast.success(`${seats.length} ticket${seats.length > 1 ? 's' : ''} added to cart!`);

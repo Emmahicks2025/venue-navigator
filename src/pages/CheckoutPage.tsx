@@ -84,6 +84,8 @@ const CheckoutPage = () => {
             event_name: item.eventName,
             event_date: item.eventDate,
             venue_name: item.venueName,
+            performer: item.performer || null,
+            performer_image: item.performerImage || null,
             section_name: seat.sectionName,
             row_name: seat.row,
             seat_number: seat.seatNumber,
