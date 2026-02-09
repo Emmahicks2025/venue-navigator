@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MapPin, Calendar, Sparkles, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { EventCard } from '@/components/events/EventCard';
@@ -15,6 +16,22 @@ import { useFeaturedDbEvents, useDbEventsByCategory, useDbEventsByCity, useDbCat
 import heroImage from '@/assets/hero-stadium.jpg';
 
 const Index = () => {
+  const heroRef = useRef<HTMLElement>(null);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (heroRef.current) {
+        const rect = heroRef.current.getBoundingClientRect();
+        if (rect.bottom > 0) {
+          setScrollY(window.scrollY);
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const { location, loading: locationLoading } = useUserLocation();
 
   const { data: featuredDbEvents, isLoading: featuredLoading } = useFeaturedDbEvents();
@@ -34,12 +51,13 @@ const Index = () => {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="relative pt-24 pb-14 sm:pt-28 sm:pb-18 lg:pt-36 lg:pb-24 overflow-hidden">
+      <section ref={heroRef} className="relative pt-24 pb-14 sm:pt-28 sm:pb-18 lg:pt-36 lg:pb-24 overflow-hidden">
         <div className="absolute inset-0">
           <img
             src={heroImage}
             alt="Concert stadium"
-            className="w-full h-full object-cover scale-105"
+            className="w-full h-full object-cover scale-110"
+            style={{ transform: `scale(1.1) translateY(${scrollY * 0.3}px)` }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background" />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10" />
