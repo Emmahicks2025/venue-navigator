@@ -12,7 +12,7 @@ export function ChatWidget() {
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');
   const { user } = useAuth();
-  const { messages, isLoading, sendMessage, sessionMode } = useChat();
+  const { messages, isLoading, sendMessage, sessionMode, resetSession } = useChat();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -92,7 +92,7 @@ export function ChatWidget() {
             <button onClick={() => setIsMinimized(true)} className="p-1 text-primary-foreground/60 hover:text-primary-foreground">
               <Minus className="w-4 h-4" />
             </button>
-            <button onClick={() => setIsOpen(false)} className="p-1 text-primary-foreground/60 hover:text-primary-foreground">
+            <button onClick={() => { setIsOpen(false); resetSession(); }} className="p-1 text-primary-foreground/60 hover:text-primary-foreground">
               <X className="w-4 h-4" />
             </button>
           </div>

@@ -206,5 +206,58 @@ export function useChat() {
     }
   }, [sessionId, sessionMode, messages, firestoreConnected, user]);
 
-  return { messages, isLoading, sendMessage, sessionId, sessionMode };
+  const resetSession = useCallback(() => {
+    // Unsubscribe from current session
+    unsubRef.current?.();
+    unsubSessionRef.current?.();
+    unsubRef.current = null;
+    unsubSessionRef.current = null;
+    
+    // Clear local state
+    setMessages([]);
+    setSessionId(null);
+    setSessionMode('ai');
+    setFirestoreConnected(false);
+    msgCounter = 0;
+    
+    // Re-initialize with a new session ID
+    if (user) {
+      const newSid = `chat_${user.uid}_${Date.now()}`;
+      setSessionId(newSid);
+      
+      // Create new Firestore session
+      const sessionRef = doc(db, 'chat_sessions', newSid);
+      setDoc(sessionRef, {
+        user_id: user.uid,
+        user_email: user.email,
+        mode: 'ai',
+        admin_id: null,
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp(),
+        last_message: null,
+      }).then(() => {
+        setFirestoreConnected(true);
+        
+        // Subscribe to messages
+        const messagesRef = collection(db, 'chat_sessions', newSid, 'messages');
+        const q = query(messagesRef, orderBy('created_at', 'asc'));
+        unsubRef.current = onSnapshot(q, (snapshot) => {
+          setMessages(snapshot.docs.map(d => ({
+            id: d.id,
+            ...d.data(),
+            created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString(),
+          } as ChatMessage)));
+        }, () => {});
+        
+        // Subscribe to session mode
+        unsubSessionRef.current = onSnapshot(sessionRef, (s) => {
+          if (s.exists()) setSessionMode(s.data().mode || 'ai');
+        }, () => {});
+      }).catch(() => {
+        setFirestoreConnected(false);
+      });
+    }
+  }, [user]);
+
+  return { messages, isLoading, sendMessage, sessionId, sessionMode, resetSession };
 }
