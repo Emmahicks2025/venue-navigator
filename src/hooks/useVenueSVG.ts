@@ -12,7 +12,10 @@ interface UseVenueSVGResult {
 }
 
 async function fetchSVG(name: string): Promise<{ content: string; sections: SVGSection[] }> {
-  const response = await fetch(`/venue-maps/${name}.svg`);
+  // IMPORTANT: venue SVG filenames contain spaces and other special characters.
+  // We must URL-encode the filename segment or the request may 404 and trigger the fallback.
+  const safeName = encodeURIComponent(name);
+  const response = await fetch(`/venue-maps/${safeName}.svg`);
   if (!response.ok) throw new Error(`Failed to load venue map: ${response.status}`);
   const content = await response.text();
   const sections = parseSVGSections(content);
