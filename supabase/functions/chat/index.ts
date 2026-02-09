@@ -21,6 +21,7 @@ const SYSTEM_PROMPT = `You are a helpful support and sales agent for TixOrbit, a
 - When a customer asks about an existing order, ask them for their order number or the email used during purchase
 - Order numbers use the format TO followed by digits (e.g. TO52422226)
 - If order data is provided in the context below, share the relevant details: status, event name, venue, seats, and total
+- If the order has admin remarks or instructions, ALWAYS include them in your response — these are important delivery/fulfillment notes for the customer
 - If no order data is found, say "I couldn't find that order. Could you double-check the order number or email?"
 - Never share order details without the customer providing their order number or email first
 
