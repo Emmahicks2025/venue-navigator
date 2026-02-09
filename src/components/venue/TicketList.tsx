@@ -180,7 +180,9 @@ export const TicketList = ({ section, svgSection, onTicketsSelected, onClose, ma
                     {ticket.row} • {ticket.seats} ticket{ticket.seats > 1 ? 's' : ''}
                   </p>
                   <p className="text-xs text-muted-foreground/70">
-                    Seats: {ticket.availableSeats.join(', ')}
+                    {matchCategory?.isWorldCup
+                      ? 'Seats will be assigned later by FIFA'
+                      : `Seats: ${ticket.availableSeats.join(', ')}`}
                   </p>
                   {ticket.seats > 1 && (
                     <div className="flex items-center gap-1 text-xs text-success mt-1">
