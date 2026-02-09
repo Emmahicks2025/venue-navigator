@@ -88,6 +88,13 @@ const COUNTRY_CODES: Record<string, string> = {
   'TBD': '',
 };
 
+// flagcdn.com only supports these specific widths
+const SUPPORTED_WIDTHS = [20, 40, 80, 160, 320, 640, 1280, 2560];
+
+function nearestSupportedWidth(desired: number): number {
+  return SUPPORTED_WIDTHS.find(w => w >= desired) || SUPPORTED_WIDTHS[SUPPORTED_WIDTHS.length - 1];
+}
+
 /**
  * Get the flag image URL for a country/team name.
  * Uses flagcdn.com which serves flags as PNG images.
@@ -95,7 +102,8 @@ const COUNTRY_CODES: Record<string, string> = {
 export function getFlagUrl(teamName: string, size: number = 40): string {
   const code = COUNTRY_CODES[teamName?.trim()];
   if (!code) return '';
-  return `https://flagcdn.com/w${size}/${code}.png`;
+  const w = nearestSupportedWidth(size);
+  return `https://flagcdn.com/w${w}/${code}.png`;
 }
 
 /**
