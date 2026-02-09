@@ -61,7 +61,7 @@ const Index = () => {
             <SearchBar variant="hero" className="mb-6" />
           </div>
 
-          <div className="animate-slide-up flex justify-center" style={{ animationDelay: '0.2s' }}>
+          <div className="animate-slide-up w-full overflow-hidden" style={{ animationDelay: '0.2s' }}>
             <CategoryTabs />
           </div>
         </div>
