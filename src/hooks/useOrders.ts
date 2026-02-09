@@ -32,6 +32,7 @@ export interface TicketRow {
   price: number;
   status: string;
   barcode: string;
+  remarks: string | null;
   created_at: string;
 }
 
