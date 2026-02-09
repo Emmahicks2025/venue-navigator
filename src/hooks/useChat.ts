@@ -131,10 +131,12 @@ export function useChat() {
     
     let context = `Order #${order.order_number} — Status: ${order.status}, Total: $${order.total}`;
     if (order.billing_email) context += `, Email: ${order.billing_email}`;
+    if (order.remarks) context += `\nAdmin Remarks/Instructions: ${order.remarks}`;
     if (tickets.length > 0) {
       context += `\nTickets (${tickets.length}):`;
       tickets.forEach((t: any) => {
         context += `\n- ${t.event_name} at ${t.venue_name}, ${t.section_name} Row ${t.row_name} Seat ${t.seat_number} ($${t.price})`;
+        if (t.remarks) context += ` [Note: ${t.remarks}]`;
       });
     }
     return context;

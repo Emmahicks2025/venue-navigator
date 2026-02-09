@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Search, Eye, RefreshCw, DollarSign, ShoppingCart, AlertTriangle, CheckCircle, XCircle, Clock, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Search, Eye, RefreshCw, DollarSign, ShoppingCart, AlertTriangle, CheckCircle, XCircle, Clock, Package, Save, MessageSquare } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { formatPrice } from '@/data/events';
 
@@ -26,6 +27,7 @@ interface OrderData {
   billing_address: string | null;
   billing_city: string | null;
   billing_zip: string | null;
+  remarks: string | null;
   created_at: any;
 }
 
@@ -68,6 +70,8 @@ export const OrdersManager = () => {
   const [orderTickets, setOrderTickets] = useState<TicketData[]>([]);
   const [loadingTickets, setLoadingTickets] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [editingRemarks, setEditingRemarks] = useState('');
+  const [savingRemarks, setSavingRemarks] = useState(false);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -108,7 +112,25 @@ export const OrdersManager = () => {
 
   const handleViewOrder = (order: OrderData) => {
     setSelectedOrder(order);
+    setEditingRemarks(order.remarks || '');
     fetchOrderTickets(order.id);
+  };
+
+  const handleSaveRemarks = async () => {
+    if (!selectedOrder) return;
+    setSavingRemarks(true);
+    try {
+      const newRemarks = editingRemarks.trim() || null;
+      await updateDoc(doc(db, 'orders', selectedOrder.id), { remarks: newRemarks });
+      setOrders(prev => prev.map(o => o.id === selectedOrder.id ? { ...o, remarks: newRemarks } : o));
+      setSelectedOrder(prev => prev ? { ...prev, remarks: newRemarks } : null);
+      toast.success('Order remarks saved');
+    } catch (err) {
+      console.error('Failed to save remarks:', err);
+      toast.error('Failed to save remarks');
+    } finally {
+      setSavingRemarks(false);
+    }
   };
 
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
@@ -380,7 +402,34 @@ export const OrdersManager = () => {
 
                 <Separator />
 
-                {/* Tickets */}
+                {/* Order Remarks */}
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                    <MessageSquare className="w-4 h-4" />
+                    Order Remarks / Instructions
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Add notes or delivery instructions for this order. These will be shared with the customer when they inquire via chat.
+                  </p>
+                  <Textarea
+                    placeholder="e.g. Tickets will be emailed 24 hours before the event. Please check your spam folder."
+                    value={editingRemarks}
+                    onChange={e => setEditingRemarks(e.target.value)}
+                    rows={3}
+                    className="text-sm resize-none mb-2"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSaveRemarks}
+                    disabled={savingRemarks || editingRemarks === (selectedOrder.remarks || '')}
+                    className="gap-1.5"
+                  >
+                    {savingRemarks ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    Save Remarks
+                  </Button>
+                </div>
+
+                <Separator />
                 <div>
                   <h4 className="text-sm font-semibold text-foreground mb-2">
                     Tickets ({loadingTickets ? '...' : orderTickets.length})
