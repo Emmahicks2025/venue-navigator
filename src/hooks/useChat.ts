@@ -10,15 +10,7 @@ export interface ChatMessage {
   created_at: string;
 }
 
-export interface ChatSession {
-  id: string;
-  mode: 'ai' | 'human';
-  user_email: string | null;
-  admin_id: string | null;
-  created_at: any;
-  updated_at: any;
-  last_message: string | null;
-}
+let msgCounter = 0;
 
 export function useChat() {
   const { user } = useAuth();
@@ -26,14 +18,18 @@ export function useChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionMode, setSessionMode] = useState<'ai' | 'human'>('ai');
+  const [firestoreConnected, setFirestoreConnected] = useState(false);
   const unsubRef = useRef<(() => void) | null>(null);
+  const unsubSessionRef = useRef<(() => void) | null>(null);
 
-  // Get or create session
-  const getOrCreateSession = useCallback(async () => {
-    if (!user) return null;
+  // Try to connect to Firestore session
+  const initSession = useCallback(async () => {
+    if (!user) return;
     
+    const sid = `chat_${user.uid}`;
+    setSessionId(sid);
+
     try {
-      const sid = `chat_${user.uid}`;
       const sessionRef = doc(db, 'chat_sessions', sid);
       const snap = await getDoc(sessionRef);
       
@@ -50,58 +46,43 @@ export function useChat() {
       } else {
         setSessionMode(snap.data().mode || 'ai');
       }
-      
-      setSessionId(sid);
-      return sid;
-    } catch (e) {
-      console.warn('Chat session init failed:', e);
-      return null;
+
+      setFirestoreConnected(true);
+
+      // Subscribe to messages
+      if (unsubRef.current) unsubRef.current();
+      const messagesRef = collection(db, 'chat_sessions', sid, 'messages');
+      const q = query(messagesRef, orderBy('created_at', 'asc'));
+      const unsub = onSnapshot(q, (snapshot) => {
+        const msgs: ChatMessage[] = snapshot.docs.map(d => ({
+          id: d.id,
+          ...d.data(),
+          created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString(),
+        } as ChatMessage));
+        setMessages(msgs);
+      }, () => { /* ignore subscription errors */ });
+      unsubRef.current = unsub;
+
+      // Subscribe to session mode
+      if (unsubSessionRef.current) unsubSessionRef.current();
+      const unsubSession = onSnapshot(sessionRef, (s) => {
+        if (s.exists()) setSessionMode(s.data().mode || 'ai');
+      }, () => {});
+      unsubSessionRef.current = unsubSession;
+
+    } catch {
+      // Firestore unavailable — chat still works via local state + edge function
+      setFirestoreConnected(false);
     }
   }, [user]);
 
-  // Subscribe to messages
   useEffect(() => {
-    if (!sessionId) return;
-    
-    if (unsubRef.current) unsubRef.current();
-
-    const messagesRef = collection(db, 'chat_sessions', sessionId, 'messages');
-    const q = query(messagesRef, orderBy('created_at', 'asc'));
-    
-    const unsub = onSnapshot(q, (snapshot) => {
-      const msgs: ChatMessage[] = snapshot.docs.map(d => ({
-        id: d.id,
-        ...d.data(),
-        created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString(),
-      } as ChatMessage));
-      setMessages(msgs);
-    }, (err) => {
-      console.warn('Chat messages subscription error:', err);
-    });
-
-    unsubRef.current = unsub;
-    return () => unsub();
-  }, [sessionId]);
-
-  // Subscribe to session mode changes
-  useEffect(() => {
-    if (!sessionId) return;
-    
-    const sessionRef = doc(db, 'chat_sessions', sessionId);
-    const unsub = onSnapshot(sessionRef, (snap) => {
-      if (snap.exists()) {
-        setSessionMode(snap.data().mode || 'ai');
-      }
-    }, (err) => {
-      console.warn('Chat session subscription error:', err);
-    });
-    return () => unsub();
-  }, [sessionId]);
-
-  // Initialize session
-  useEffect(() => {
-    if (user) getOrCreateSession();
-  }, [user, getOrCreateSession]);
+    if (user) initSession();
+    return () => {
+      unsubRef.current?.();
+      unsubSessionRef.current?.();
+    };
+  }, [user, initSession]);
 
   const lookupOrder = async (orderNumber: string): Promise<string | null> => {
     try {
@@ -111,7 +92,6 @@ export function useChat() {
       if (snap.empty) return null;
       
       const order = snap.docs[0].data();
-      // Look up tickets for this order
       const ticketsRef = collection(db, 'tickets');
       const tq = query(ticketsRef, where('order_id', '==', snap.docs[0].id));
       const tSnap = await getDocs(tq);
@@ -126,80 +106,90 @@ export function useChat() {
         });
       }
       return context;
-    } catch (e) {
-      console.error('Order lookup error:', e);
+    } catch {
       return null;
     }
   };
 
+  const addLocalMessage = (role: ChatMessage['role'], content: string): ChatMessage => {
+    const msg: ChatMessage = {
+      id: `local_${++msgCounter}`,
+      role,
+      content,
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, msg]);
+    return msg;
+  };
+
   const sendMessage = useCallback(async (content: string) => {
-    if (!sessionId || !content.trim()) return;
+    if (!content.trim() || !user) return;
     
-    const messagesRef = collection(db, 'chat_sessions', sessionId, 'messages');
-    
-    // Add user message to Firestore
-    await addDoc(messagesRef, {
-      role: 'user',
-      content: content.trim(),
-      created_at: serverTimestamp(),
-    });
+    // Add user message locally immediately
+    addLocalMessage('user', content.trim());
 
-    // Update session
-    await updateDoc(doc(db, 'chat_sessions', sessionId), {
-      updated_at: serverTimestamp(),
-      last_message: content.trim(),
-    });
-
-    // If AI mode, get AI response
-    if (sessionMode === 'ai') {
-      setIsLoading(true);
+    // Try to persist to Firestore (non-blocking)
+    if (firestoreConnected && sessionId) {
       try {
-        const chatHistory = [...messages, { role: 'user' as const, content: content.trim() }]
-          .slice(-10)
-          .map(m => ({ role: m.role === 'admin' ? 'assistant' : m.role, content: m.content }));
-
-        // Check if any recent message contains an order number pattern
-        let orderContext: string | null = null;
-        const orderMatch = content.match(/ORD-[A-Z0-9]+/i);
-        if (orderMatch) {
-          orderContext = await lookupOrder(orderMatch[0].toUpperCase());
-        }
-
-        const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
-        const resp = await fetch(CHAT_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ messages: chatHistory, sessionId, orderContext }),
-        });
-
-        if (!resp.ok) {
-          const errData = await resp.json().catch(() => ({}));
-          throw new Error(errData.error || 'Failed to get response');
-        }
-
-        const data = await resp.json();
-        
-        // Add AI response to Firestore
-        await addDoc(messagesRef, {
-          role: 'assistant',
-          content: data.reply,
-          created_at: serverTimestamp(),
-        });
-      } catch (err) {
-        console.error('Chat error:', err);
-        await addDoc(messagesRef, {
-          role: 'assistant',
-          content: "I'm having trouble connecting right now. Please try again in a moment! 🙏",
-          created_at: serverTimestamp(),
-        });
-      } finally {
-        setIsLoading(false);
-      }
+        const messagesRef = collection(db, 'chat_sessions', sessionId, 'messages');
+        await addDoc(messagesRef, { role: 'user', content: content.trim(), created_at: serverTimestamp() });
+        await updateDoc(doc(db, 'chat_sessions', sessionId), { updated_at: serverTimestamp(), last_message: content.trim() });
+      } catch { /* ignore persistence errors */ }
     }
-  }, [sessionId, sessionMode, messages]);
+
+    // If in human mode (admin takeover), don't call AI
+    if (sessionMode === 'human') return;
+
+    setIsLoading(true);
+    try {
+      const chatHistory = [...messages, { role: 'user' as const, content: content.trim() }]
+        .slice(-10)
+        .map(m => ({ role: m.role === 'admin' ? 'assistant' : m.role, content: m.content }));
+
+      let orderContext: string | null = null;
+      const orderMatch = content.match(/ORD-[A-Z0-9]+/i);
+      if (orderMatch) {
+        orderContext = await lookupOrder(orderMatch[0].toUpperCase());
+      }
+
+      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: chatHistory, sessionId, orderContext }),
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to get response');
+      }
+
+      const data = await resp.json();
+      const reply = data.reply || "Sorry, I couldn't process that. Please try again.";
+
+      // Add AI reply locally
+      if (!firestoreConnected) {
+        addLocalMessage('assistant', reply);
+      }
+
+      // Persist AI reply to Firestore
+      if (firestoreConnected && sessionId) {
+        try {
+          await addDoc(collection(db, 'chat_sessions', sessionId, 'messages'), {
+            role: 'assistant', content: reply, created_at: serverTimestamp(),
+          });
+        } catch { /* ignore */ }
+      }
+    } catch (err) {
+      console.error('Chat error:', err);
+      addLocalMessage('assistant', "I'm having trouble connecting right now. Please try again in a moment!");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sessionId, sessionMode, messages, firestoreConnected, user]);
 
   return { messages, isLoading, sendMessage, sessionId, sessionMode };
 }
