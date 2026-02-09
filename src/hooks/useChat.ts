@@ -92,7 +92,6 @@ export function useChat() {
       const snap = await getDocs(q);
       console.log('[Chat] Order query result:', snap.size, 'docs found');
       if (snap.empty) {
-        // Try case-insensitive by uppercasing
         const q2 = query(ordersRef, where('order_number', '==', orderNumber.toUpperCase()));
         const snap2 = await getDocs(q2);
         console.log('[Chat] Uppercase retry:', snap2.size, 'docs found');
@@ -102,6 +101,22 @@ export function useChat() {
       return buildOrderContext(snap.docs[0]);
     } catch (err) {
       console.error('[Chat] Order lookup error:', err);
+      return null;
+    }
+  };
+
+  const lookupOrderByEmail = async (email: string): Promise<string | null> => {
+    try {
+      console.log('[Chat] Looking up orders by email:', email);
+      const ordersRef = collection(db, 'orders');
+      const q = query(ordersRef, where('billing_email', '==', email.toLowerCase()));
+      const snap = await getDocs(q);
+      console.log('[Chat] Email query result:', snap.size, 'docs found');
+      if (snap.empty) return null;
+      const contexts = await Promise.all(snap.docs.map(d => buildOrderContext(d)));
+      return contexts.join('\n\n');
+    } catch (err) {
+      console.error('[Chat] Email order lookup error:', err);
       return null;
     }
   };
@@ -165,6 +180,13 @@ export function useChat() {
       const orderMatch = content.match(/T[OV]\d{5,}/i) || content.match(/ORD-[A-Z0-9]+/i);
       if (orderMatch) {
         orderContext = await lookupOrder(orderMatch[0]);
+      }
+      // Also try email-based lookup
+      if (!orderContext) {
+        const emailMatch = content.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+        if (emailMatch) {
+          orderContext = await lookupOrderByEmail(emailMatch[0]);
+        }
       }
 
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
