@@ -7,6 +7,7 @@ import { EventCard } from '@/components/events/EventCard';
 import { CategoryTabs } from '@/components/events/CategoryTabs';
 import { TopArtistsSection } from '@/components/home/TopArtistsSection';
 import { HeroParticles } from '@/components/home/HeroParticles';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
 
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
@@ -46,6 +47,9 @@ const Index = () => {
 
   const hasLocalEvents = localEvents.length > 0;
   const upcomingEvents = hasLocalEvents ? localEvents.slice(0, 6) : allEvents.slice(0, 6);
+
+  const featuredReveal = useScrollReveal(0.1);
+  const upcomingReveal = useScrollReveal(0.1);
 
   const getCategoryCount = (cat: string) => categoryCounts?.[cat] || 0;
 
@@ -98,7 +102,10 @@ const Index = () => {
       <TopArtistsSection />
 
       {/* Featured Events Carousel */}
-      <section className="py-12 lg:py-16">
+      <section
+        ref={featuredReveal.ref as React.RefObject<HTMLElement>}
+        className={`py-12 lg:py-16 transition-all duration-700 ${featuredReveal.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
@@ -138,7 +145,10 @@ const Index = () => {
       </section>
 
       {/* Upcoming Events */}
-      <section className="py-16 lg:py-24 bg-card/50">
+      <section
+        ref={upcomingReveal.ref as React.RefObject<HTMLElement>}
+        className={`py-16 lg:py-24 bg-card/50 transition-all duration-700 delay-100 ${upcomingReveal.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
