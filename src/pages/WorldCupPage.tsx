@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Trophy, Calendar, MapPin, Loader2, Search, X } from 'lucide-react';
+import { MatchTeams } from '@/components/venue/MatchTeams';
 import { Layout } from '@/components/layout/Layout';
 import { CategoryTabs } from '@/components/events/CategoryTabs';
 import { useWorldCupEvents } from '@/hooks/useDbEvents';
@@ -118,9 +119,7 @@ const WorldCupPage = () => {
                       </span>
                     )}
                   </div>
-                  <h3 className="font-semibold text-foreground text-lg mb-3 group-hover:text-primary transition-colors">
-                    {match.home_team} vs {match.away_team}
-                  </h3>
+                  <MatchTeams homeTeam={match.home_team} awayTeam={match.away_team} size="md" className="text-foreground mb-3 group-hover:text-primary transition-colors" />
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1.5">

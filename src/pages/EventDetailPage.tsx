@@ -13,6 +13,7 @@ import { useTicketmasterImage } from '@/hooks/useTicketmasterImage';
 import { SelectedSeat, VenueSection } from '@/types';
 import { toast } from 'sonner';
 import { getPriceCategory } from '@/lib/svgParser';
+import { MatchTeams } from '@/components/venue/MatchTeams';
 import { formatDate, formatTime, formatPrice, getCategoryLabel } from '@/data/events';
 
 const EventDetailPage = () => {
@@ -156,12 +157,13 @@ const EventDetailPage = () => {
                     {event.round}{event.group_name ? ` - Group ${event.group_name}` : ''}
                   </span>
                 )}
-                <h1 className="font-display text-xl lg:text-2xl font-bold text-foreground mb-1">
-                  {event.home_team && event.away_team 
-                    ? `${event.home_team} vs ${event.away_team}`
-                    : event.name
-                  }
-                </h1>
+                {event.home_team && event.away_team ? (
+                  <MatchTeams homeTeam={event.home_team} awayTeam={event.away_team} size="lg" className="text-foreground mb-1" />
+                ) : (
+                  <h1 className="font-display text-xl lg:text-2xl font-bold text-foreground mb-1">
+                    {event.name}
+                  </h1>
+                )}
                 <p className="text-muted-foreground">{event.description || event.performer}</p>
               </div>
               <div className="text-right">
