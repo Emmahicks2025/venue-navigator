@@ -20,6 +20,7 @@ import MigratePage from "./pages/MigratePage";
 import SetupAdminPage from "./pages/SetupAdminPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
+import HelpPage from "./pages/HelpPage";
 import NotFound from "./pages/NotFound";
 import { CookieConsent } from "./components/layout/CookieConsent";
 
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/setup-admin" element={<SetupAdminPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/help" element={<HelpPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ChatWidget />
