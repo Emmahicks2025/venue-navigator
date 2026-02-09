@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { Event, EventCategory } from '@/types';
 
 export interface DbEvent {
@@ -35,7 +36,7 @@ export function mapDbEventToFrontend(dbEvent: DbEvent): Event {
     performer: dbEvent.performer,
     performerImage: dbEvent.performer_image || '',
     category: (dbEvent.category as EventCategory) || 'concerts',
-    venueId: dbEvent.venue_name, // use venue_name as venueId for DB events
+    venueId: dbEvent.venue_name,
     venueName: dbEvent.venue_name,
     date: dbEvent.date,
     time: dbEvent.time,
@@ -46,19 +47,24 @@ export function mapDbEventToFrontend(dbEvent: DbEvent): Event {
   };
 }
 
+const eventsRef = collection(db, 'events');
+
+/** Helper to convert Firestore doc to DbEvent */
+function docToDbEvent(docSnap: any): DbEvent {
+  const data = docSnap.data();
+  return { id: docSnap.id, ...data } as DbEvent;
+}
+
 export function useWorldCupEvents() {
   return useQuery({
     queryKey: ['world-cup-events'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .ilike('name', '%World Cup%')
-        .order('date', { ascending: true })
-        .order('time', { ascending: true });
-
-      if (error) throw error;
-      return data as DbEvent[];
+      // Firestore doesn't support ilike, so we fetch all and filter client-side
+      const q = query(eventsRef, orderBy('date', 'asc'));
+      const snapshot = await getDocs(q);
+      return snapshot.docs
+        .map(docToDbEvent)
+        .filter((e) => e.name.toLowerCase().includes('world cup'));
     },
   });
 }
@@ -68,14 +74,9 @@ export function useEventById(id: string | undefined) {
     queryKey: ['event', id],
     queryFn: async () => {
       if (!id) return null;
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data as DbEvent | null;
+      const docSnap = await getDoc(doc(db, 'events', id));
+      if (!docSnap.exists()) return null;
+      return docToDbEvent(docSnap);
     },
     enabled: !!id,
   });
@@ -85,18 +86,22 @@ export function useDbEvents(searchQuery?: string) {
   return useQuery({
     queryKey: ['db-events', searchQuery],
     queryFn: async () => {
-      let query = supabase
-        .from('events')
-        .select('*')
-        .order('date', { ascending: true });
+      const q = query(eventsRef, orderBy('date', 'asc'), limit(200));
+      const snapshot = await getDocs(q);
+      let events = snapshot.docs.map(docToDbEvent);
 
       if (searchQuery) {
-        query = query.or(`name.ilike.%${searchQuery}%,venue_name.ilike.%${searchQuery}%,performer.ilike.%${searchQuery}%,venue_city.ilike.%${searchQuery}%`);
+        const lower = searchQuery.toLowerCase();
+        events = events.filter(
+          (e) =>
+            e.name.toLowerCase().includes(lower) ||
+            e.venue_name.toLowerCase().includes(lower) ||
+            e.performer.toLowerCase().includes(lower) ||
+            e.venue_city.toLowerCase().includes(lower)
+        );
       }
 
-      const { data, error } = await query.limit(200);
-      if (error) throw error;
-      return data as DbEvent[];
+      return events;
     },
   });
 }
@@ -105,18 +110,14 @@ export function useDbEventsByCategory(category: string | undefined) {
   return useQuery({
     queryKey: ['db-events-category', category],
     queryFn: async () => {
-      let query = supabase
-        .from('events')
-        .select('*')
-        .order('date', { ascending: true });
-
+      let q;
       if (category && category !== 'all') {
-        query = query.eq('category', category);
+        q = query(eventsRef, where('category', '==', category), orderBy('date', 'asc'), limit(200));
+      } else {
+        q = query(eventsRef, orderBy('date', 'asc'), limit(200));
       }
-
-      const { data, error } = await query.limit(200);
-      if (error) throw error;
-      return data as DbEvent[];
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docToDbEvent);
     },
   });
 }
@@ -125,15 +126,9 @@ export function useFeaturedDbEvents() {
   return useQuery({
     queryKey: ['db-events-featured'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .eq('is_featured', true)
-        .order('date', { ascending: true })
-        .limit(20);
-
-      if (error) throw error;
-      return data as DbEvent[];
+      const q = query(eventsRef, where('is_featured', '==', true), orderBy('date', 'asc'), limit(20));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docToDbEvent);
     },
   });
 }
@@ -143,15 +138,13 @@ export function useDbEventsByCity(city: string | undefined) {
     queryKey: ['db-events-city', city],
     queryFn: async () => {
       if (!city) return [];
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .ilike('venue_city', `%${city}%`)
-        .order('date', { ascending: true })
-        .limit(20);
-
-      if (error) throw error;
-      return data as DbEvent[];
+      // Firestore doesn't support ilike, fetch and filter client-side
+      const q = query(eventsRef, orderBy('date', 'asc'), limit(200));
+      const snapshot = await getDocs(q);
+      const lower = city.toLowerCase();
+      return snapshot.docs
+        .map(docToDbEvent)
+        .filter((e) => e.venue_city.toLowerCase().includes(lower));
     },
     enabled: !!city,
   });
@@ -161,15 +154,11 @@ export function useDbCategoryCounts() {
   return useQuery({
     queryKey: ['db-category-counts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('events')
-        .select('category');
-
-      if (error) throw error;
-
+      const snapshot = await getDocs(eventsRef);
       const counts: Record<string, number> = {};
-      (data || []).forEach((row: { category: string }) => {
-        counts[row.category] = (counts[row.category] || 0) + 1;
+      snapshot.docs.forEach((d) => {
+        const cat = d.data().category;
+        counts[cat] = (counts[cat] || 0) + 1;
       });
       return counts;
     },
