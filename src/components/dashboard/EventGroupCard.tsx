@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, MapPin, Clock, Ticket, Send, QrCode, ChevronDown, ChevronUp, Hash } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Send, QrCode, ChevronDown, ChevronUp, Hash, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatPrice, formatDate } from '@/data/events';
@@ -22,6 +22,7 @@ export const EventGroupCard = ({ eventId, tickets, orders = [], isPast = false }
   const firstTicket = tickets[0];
   const activeCount = tickets.filter(t => t.status === 'active').length;
   const totalValue = tickets.reduce((sum, t) => sum + t.price, 0);
+  const isWorldCup = firstTicket.event_name?.toLowerCase().includes('world cup');
   
   // Find order number from orders
   const orderNumber = orders.find(o => o.id === firstTicket.order_id)?.order_number;
@@ -151,21 +152,39 @@ export const EventGroupCard = ({ eventId, tickets, orders = [], isPast = false }
                       </Button>
                     )}
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowBarcodeFor(showBarcodeFor === ticket.id ? null : ticket.id);
-                      }}
-                      className="gap-1 text-xs h-7"
-                    >
-                      <QrCode className="w-3 h-3" />
-                    </Button>
+                    {!isWorldCup && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowBarcodeFor(showBarcodeFor === ticket.id ? null : ticket.id);
+                        }}
+                        className="gap-1 text-xs h-7"
+                      >
+                        <QrCode className="w-3 h-3" />
+                      </Button>
+                    )}
                   </div>
                 </div>
 
-                {showBarcodeFor === ticket.id && (
+                {/* FIFA World Cup: show confirmation notice instead of barcode */}
+                {isWorldCup && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <div className="flex gap-3 p-3 rounded-xl bg-[#FFDB00]/10 border border-[#FFDB00]/30">
+                      <ShieldCheck className="w-5 h-5 text-[#FFDB00] mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Tickets Confirmed</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                          Your tickets are secured and confirmed. The QR code and ticket number will be available in your dashboard once released by FIFA, approximately 7 days before the match.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Non-FIFA: show barcode */}
+                {!isWorldCup && showBarcodeFor === ticket.id && (
                   <div className="mt-3 pt-3 border-t border-border">
                     <div className="bg-foreground/5 border border-border rounded-xl p-4 text-center">
                       <div className="flex justify-center gap-0.5 mb-2">
