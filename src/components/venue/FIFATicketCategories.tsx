@@ -197,21 +197,36 @@ export function FIFATicketCategories({ sections, onTicketsSelected }: FIFATicket
               onClick={() => setSelectedCategory(isSelected ? null : cat.id)}
             >
               {/* Category Header */}
-              <div className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className={cn('px-2.5 py-1 rounded-md text-xs font-bold text-white', cat.badgeColor)}>
-                    {cat.label}
-                  </span>
-                  <div>
-                    <h4 className="font-semibold text-foreground text-sm">{cat.name}</h4>
-                    <p className="text-xs text-muted-foreground">{cat.description}</p>
+              <div className="px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className={cn('px-2.5 py-1 rounded-md text-xs font-bold text-white', cat.badgeColor)}>
+                      {cat.label}
+                    </span>
+                    <div>
+                      <h4 className="font-semibold text-foreground text-sm">{cat.name}</h4>
+                      <p className="text-xs text-muted-foreground">{cat.description}</p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <p className="text-lg font-bold text-foreground">
+                      {formatPrice(cat.priceRange.min)}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground uppercase">per ticket</p>
                   </div>
                 </div>
-                <div className="text-right shrink-0 ml-3">
-                  <p className="text-lg font-bold text-foreground">
-                    {formatPrice(cat.priceRange.min)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground uppercase">per ticket</p>
+                {/* Sections included */}
+                <div className="flex flex-wrap gap-1 mt-2 ml-[3.25rem]">
+                  {cat.sections.slice(0, 6).map(s => (
+                    <span key={s.id} className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                      {s.name}
+                    </span>
+                  ))}
+                  {cat.sections.length > 6 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                      +{cat.sections.length - 6} more
+                    </span>
+                  )}
                 </div>
               </div>
 
