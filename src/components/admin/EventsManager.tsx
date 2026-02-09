@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { collection, query, orderBy, limit, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { venueNames } from '@/data/venues';
 import { Button } from '@/components/ui/button';
@@ -52,7 +52,7 @@ export function EventsManager() {
   const { data: events, isLoading } = useQuery({
     queryKey: ['admin-events', searchQuery],
     queryFn: async () => {
-      const q = query(collection(db, 'events'), orderBy('date', 'asc'), limit(100));
+      const q = query(collection(db, 'events'), orderBy('date', 'asc'));
       const snapshot = await getDocs(q);
       let results = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Event));
 
