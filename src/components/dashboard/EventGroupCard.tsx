@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import { Calendar, MapPin, Clock, Ticket, Send, QrCode, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, MapPin, Clock, Ticket, Send, QrCode, ChevronDown, ChevronUp, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatPrice, formatDate } from '@/data/events';
-import { TicketRow } from '@/hooks/useOrders';
+import { TicketRow, OrderRow } from '@/hooks/useOrders';
 import { TransferTicketDialog } from './TransferTicketDialog';
 
 interface EventGroupCardProps {
   eventId: string;
   tickets: TicketRow[];
+  orders?: OrderRow[];
   isPast?: boolean;
 }
 
-export const EventGroupCard = ({ eventId, tickets, isPast = false }: EventGroupCardProps) => {
+export const EventGroupCard = ({ eventId, tickets, orders = [], isPast = false }: EventGroupCardProps) => {
   const [expanded, setExpanded] = useState(false);
   const [transferTicket, setTransferTicket] = useState<TicketRow | null>(null);
   const [showBarcodeFor, setShowBarcodeFor] = useState<string | null>(null);
@@ -21,6 +22,9 @@ export const EventGroupCard = ({ eventId, tickets, isPast = false }: EventGroupC
   const firstTicket = tickets[0];
   const activeCount = tickets.filter(t => t.status === 'active').length;
   const totalValue = tickets.reduce((sum, t) => sum + t.price, 0);
+  
+  // Find order number from orders
+  const orderNumber = orders.find(o => o.id === firstTicket.order_id)?.order_number;
 
   return (
     <>
@@ -87,6 +91,12 @@ export const EventGroupCard = ({ eventId, tickets, isPast = false }: EventGroupC
                 <Ticket className="w-4 h-4 text-primary" />
                 <span>{activeCount} active · {formatPrice(totalValue)} total</span>
               </div>
+              {orderNumber && (
+                <div className="flex items-center gap-2">
+                  <Hash className="w-4 h-4 text-primary" />
+                  <span className="font-mono">{orderNumber}</span>
+                </div>
+              )}
             </div>
           </div>
         </button>

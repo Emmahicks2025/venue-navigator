@@ -106,7 +106,7 @@ const DashboardPage = () => {
             ) : upcomingGroups.size > 0 ? (
               <div className="space-y-4">
                 {Array.from(upcomingGroups.entries()).map(([eventId, groupTickets]) => (
-                  <EventGroupCard key={eventId} eventId={eventId} tickets={groupTickets} />
+                  <EventGroupCard key={eventId} eventId={eventId} tickets={groupTickets} orders={orders} />
                 ))}
               </div>
             ) : (
@@ -127,7 +127,7 @@ const DashboardPage = () => {
             ) : pastGroups.size > 0 ? (
               <div className="space-y-4">
                 {Array.from(pastGroups.entries()).map(([eventId, groupTickets]) => (
-                  <EventGroupCard key={eventId} eventId={eventId} tickets={groupTickets} isPast />
+                  <EventGroupCard key={eventId} eventId={eventId} tickets={groupTickets} orders={orders} isPast />
                 ))}
               </div>
             ) : (
