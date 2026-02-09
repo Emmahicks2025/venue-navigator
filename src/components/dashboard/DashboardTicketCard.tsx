@@ -78,8 +78,16 @@ export const DashboardTicketCard = ({ ticket, isPast = false, onTransferInitiate
               </div>
               <div className="flex items-center gap-2">
                 <Ticket className="w-4 h-4 text-primary" />
-                <span>{ticket.section_name} · Row {ticket.row_name} · Seat {ticket.seat_number}</span>
+              <span>{ticket.section_name} · Row {ticket.row_name} · Seat {ticket.seat_number}</span>
               </div>
+            </div>
+
+            {/* Delivery Instructions */}
+            <div className="mb-4 p-3 bg-secondary/50 border border-border rounded-lg">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <span className="font-medium text-foreground">📋 Instructions: </span>
+                {(ticket as any).remarks || "You will receive your tickets from the seller. Please check your email for delivery instructions and updates regarding your order."}
+              </p>
             </div>
 
             <div className="flex items-center justify-between">

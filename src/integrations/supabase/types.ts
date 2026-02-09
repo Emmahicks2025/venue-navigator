@@ -269,6 +269,7 @@ export type Database = {
           performer: string | null
           performer_image: string | null
           price: number
+          remarks: string | null
           row_name: string
           seat_number: number
           section_name: string
@@ -289,6 +290,7 @@ export type Database = {
           performer?: string | null
           performer_image?: string | null
           price?: number
+          remarks?: string | null
           row_name: string
           seat_number: number
           section_name: string
@@ -309,6 +311,7 @@ export type Database = {
           performer?: string | null
           performer_image?: string | null
           price?: number
+          remarks?: string | null
           row_name?: string
           seat_number?: number
           section_name?: string
