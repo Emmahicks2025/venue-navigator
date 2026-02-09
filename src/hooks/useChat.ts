@@ -229,20 +229,31 @@ export function useChat() {
       setMessages(prev => [...prev, { id: typingMsgId, role: 'assistant', content: '', created_at: new Date().toISOString() }]);
 
       let wordIndex = 0;
+      const totalWords = words.length;
+      // Scale delay based on response length: longer replies = slower typing
+      const baseDelay = totalWords > 40 ? 140 : totalWords > 20 ? 110 : 80;
+      const jitter = totalWords > 40 ? 120 : totalWords > 20 ? 90 : 60;
+
       await new Promise<void>((resolve) => {
         const tick = () => {
           wordIndex++;
           const partial = words.slice(0, wordIndex).join(' ');
           setMessages(prev => prev.map(m => m.id === typingMsgId ? { ...m, content: partial } : m));
           if (wordIndex < words.length) {
-            const delay = 40 + Math.random() * 80; // 40-120ms per word
+            // Add extra pauses after punctuation (sentences, commas)
+            const lastWord = words[wordIndex - 1];
+            const isPause = /[.!?]$/.test(lastWord);
+            const isComma = /,$/.test(lastWord);
+            let delay = baseDelay + Math.random() * jitter;
+            if (isPause) delay += 400 + Math.random() * 300; // pause after sentences
+            if (isComma) delay += 150 + Math.random() * 150; // slight pause after commas
             typingRef.current = setTimeout(tick, delay);
           } else {
             setIsTyping(false);
             resolve();
           }
         };
-        const initialDelay = 300 + Math.random() * 700; // 0.3-1s before first word
+        const initialDelay = 800 + Math.random() * 1200; // 0.8-2s before first word
         typingRef.current = setTimeout(tick, initialDelay);
       });
 
