@@ -53,7 +53,7 @@ export function ChatWidget() {
       <button
         onClick={handleOpen}
         className={cn(
-          'fixed bottom-5 right-5 z-50 w-12 h-12 rounded-full flex items-center justify-center',
+          'fixed bottom-20 right-5 z-50 w-12 h-12 rounded-full flex items-center justify-center',
           'bg-primary text-primary-foreground shadow-lg hover:scale-105 transition-all duration-200',
           isOpen && 'scale-0 opacity-0 pointer-events-none'
         )}
@@ -66,7 +66,7 @@ export function ChatWidget() {
       {isOpen && isMinimized && (
         <button
           onClick={() => setIsMinimized(false)}
-          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 transition-all text-sm font-medium"
+          className="fixed bottom-20 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 transition-all text-sm font-medium"
         >
           <MessageCircle className="w-4 h-4" />
           TixOrbit Help
@@ -75,7 +75,7 @@ export function ChatWidget() {
 
       {/* Chat Panel */}
       <div className={cn(
-        'fixed bottom-5 right-5 z-50 w-[340px] max-w-[calc(100vw-2rem)] rounded-xl overflow-hidden',
+        'fixed bottom-20 right-5 z-50 w-[340px] max-w-[calc(100vw-2rem)] rounded-xl overflow-hidden',
         'border border-border shadow-2xl flex flex-col',
         'transition-all duration-200 origin-bottom-right',
         isOpen && !isMinimized ? 'scale-100 opacity-100 h-[440px]' : 'scale-0 opacity-0 h-0 pointer-events-none'
