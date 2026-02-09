@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { SVGSection, parseSVGSections } from '@/lib/svgParser';
-import { getVenueMapSVG } from '@/data/venueMapRegistry';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const FALLBACK_MAP = '_general';
 
@@ -12,22 +13,47 @@ interface UseVenueSVGResult {
   isFallback: boolean;
 }
 
-// Normalize venue name for SVG filename lookup
+// Normalize venue name for lookup
 function normalizeVenueName(name: string): string {
   return name.replace(/&/g, '');
 }
 
-function loadSVGFromRegistry(name: string): { content: string; sections: SVGSection[] } {
+// In-memory cache to avoid repeated Firestore reads
+const svgCache = new Map<string, { content: string; sections: SVGSection[] }>();
+
+async function fetchSVGFromFirestore(name: string): Promise<{ content: string; sections: SVGSection[] }> {
   const normalizedName = normalizeVenueName(name);
-  console.log(`[VenueSVG] Loading from registry: "${normalizedName}" (original: "${name}")`);
   
-  const content = getVenueMapSVG(normalizedName);
-  if (!content) {
-    throw new Error(`Venue map not found in registry: ${normalizedName}`);
+  // Check cache first
+  if (svgCache.has(normalizedName)) {
+    console.log(`[VenueSVG] Cache hit: "${normalizedName}"`);
+    return svgCache.get(normalizedName)!;
   }
+
+  console.log(`[VenueSVG] Fetching from Firestore: "${normalizedName}" (original: "${name}")`);
   
+  const venueRef = collection(db, 'venue_maps');
+  const q = query(venueRef, where('venue_name', '==', normalizedName));
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    throw new Error(`Venue map not found in Firestore: ${normalizedName}`);
+  }
+
+  const doc = snapshot.docs[0];
+  const content = doc.data().svg_content as string;
+
+  if (!content || !content.includes('<svg')) {
+    throw new Error(`Invalid SVG content for venue: ${normalizedName}`);
+  }
+
   const sections = parseSVGSections(content);
-  return { content, sections };
+  const result = { content, sections };
+  
+  // Cache the result
+  svgCache.set(normalizedName, result);
+  
+  return result;
 }
 
 export function useVenueSVG(venueName: string | undefined): UseVenueSVGResult {
@@ -43,13 +69,13 @@ export function useVenueSVG(venueName: string | undefined): UseVenueSVGResult {
       return;
     }
 
-    const loadSVG = () => {
+    const loadSVG = async () => {
       setLoading(true);
       setError(null);
       setIsFallback(false);
 
       try {
-        const result = loadSVGFromRegistry(venueName);
+        const result = await fetchSVGFromFirestore(venueName);
 
         if (result.sections.length === 0) {
           throw new Error('Map has no interactive sections');
@@ -69,7 +95,7 @@ export function useVenueSVG(venueName: string | undefined): UseVenueSVGResult {
         }
 
         try {
-          const fallback = loadSVGFromRegistry(FALLBACK_MAP);
+          const fallback = await fetchSVGFromFirestore(FALLBACK_MAP);
           setSvgContent(fallback.content);
           setSections(fallback.sections);
           setIsFallback(true);
