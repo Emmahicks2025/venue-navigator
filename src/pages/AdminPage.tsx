@@ -4,6 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EventsManager } from '@/components/admin/EventsManager';
 import { VenueMapsManager } from '@/components/admin/VenueMapsManager';
+import { BulkUploadMaps } from '@/components/admin/BulkUploadMaps';
 import { FifaEventsManager } from '@/components/admin/FifaEventsManager';
 import { Calendar, Map, Loader2, ShieldAlert, Trophy } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -75,7 +76,10 @@ const AdminPage = () => {
           </TabsContent>
 
           <TabsContent value="venues">
-            <VenueMapsManager />
+            <div className="space-y-6">
+              <BulkUploadMaps />
+              <VenueMapsManager />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
