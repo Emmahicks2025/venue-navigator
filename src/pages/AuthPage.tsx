@@ -4,9 +4,12 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, LogIn, UserPlus, Ticket } from 'lucide-react';
+import { Loader2, LogIn, UserPlus, Ticket, Phone, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+
+type SignupStep = 'form' | 'verify-phone';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,23 +17,35 @@ const AuthPage = () => {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { user, loading, signIn, signUp } = useAuth();
+  const [signupStep, setSignupStep] = useState<SignupStep>('form');
+  const [verificationId, setVerificationId] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [newUserId, setNewUserId] = useState('');
+  const [sendingCode, setSendingCode] = useState(false);
+  const { user, loading, signIn, signUp, sendPhoneVerification, verifyPhoneCode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get redirect path from query params (e.g., /auth?redirect=/checkout)
   const redirectTo = new URLSearchParams(location.search).get('redirect') || '/';
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && signupStep === 'form') {
       navigate(redirectTo);
     }
-  }, [user, loading, navigate, redirectTo]);
+  }, [user, loading, navigate, redirectTo, signupStep]);
+
+  const formatPhoneNumber = (val: string) => {
+    // Ensure it starts with + for international format
+    const cleaned = val.replace(/[^\d+]/g, '');
+    if (cleaned && !cleaned.startsWith('+')) return '+1' + cleaned;
+    return cleaned;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.error('Please fill in all fields');
       return;
@@ -41,6 +56,10 @@ const AuthPage = () => {
     }
     if (!isLogin && (!firstName || !lastName)) {
       toast.error('Please enter your first and last name');
+      return;
+    }
+    if (!isLogin && !phone) {
+      toast.error('Please enter your phone number for verification');
       return;
     }
 
@@ -58,7 +77,7 @@ const AuthPage = () => {
         }
         toast.success('Signed in successfully!');
       } else {
-        const { error } = await signUp(email, password, { firstName, lastName });
+        const { error, user: newUser } = await signUp(email, password, { firstName, lastName, phone: formatPhoneNumber(phone) });
         if (error) {
           if (error.message.includes('already-in-use')) {
             toast.error('This email is already registered. Try signing in.');
@@ -68,11 +87,71 @@ const AuthPage = () => {
           return;
         }
 
-        toast.success('Account created! You can now sign in.');
-        setIsLogin(true);
+        if (newUser) {
+          setNewUserId(newUser.uid);
+          // Send phone verification
+          setSendingCode(true);
+          const { verificationId: vId, error: phoneError } = await sendPhoneVerification(
+            formatPhoneNumber(phone),
+            'recaptcha-container'
+          );
+          setSendingCode(false);
+
+          if (phoneError) {
+            toast.error('Account created but phone verification failed: ' + phoneError.message);
+            setSignupStep('form');
+            setIsLogin(true);
+            return;
+          }
+
+          if (vId) {
+            setVerificationId(vId);
+            setSignupStep('verify-phone');
+            toast.success('Verification code sent to your phone!');
+          }
+        }
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (otpCode.length !== 6) {
+      toast.error('Please enter the 6-digit code');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { error } = await verifyPhoneCode(verificationId, otpCode, newUserId);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success('Phone verified! Welcome aboard!');
+      setSignupStep('form');
+      navigate(redirectTo);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setSendingCode(true);
+    const { verificationId: vId, error } = await sendPhoneVerification(
+      formatPhoneNumber(phone),
+      'recaptcha-container'
+    );
+    setSendingCode(false);
+
+    if (error) {
+      toast.error('Failed to resend: ' + error.message);
+      return;
+    }
+    if (vId) {
+      setVerificationId(vId);
+      toast.success('New code sent!');
     }
   };
 
@@ -90,97 +169,166 @@ const AuthPage = () => {
     <Layout>
       <div className="flex items-center justify-center min-h-[60vh] px-4">
         <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Ticket className="w-7 h-7 text-primary" />
+          {/* Invisible reCAPTCHA container */}
+          <div id="recaptcha-container" />
+
+          {signupStep === 'verify-phone' ? (
+            /* Phone Verification Step */
+            <div className="space-y-6">
+              <div className="text-center mb-8">
+                <div className="flex justify-center mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <ShieldCheck className="w-7 h-7 text-primary" />
+                  </div>
+                </div>
+                <h1 className="font-display text-2xl font-bold text-foreground">Verify Your Phone</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  We sent a 6-digit code to <span className="text-foreground font-medium">{formatPhoneNumber(phone)}</span>
+                </p>
+              </div>
+
+              <div className="flex justify-center">
+                <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+
+              <Button onClick={handleVerifyOTP} className="w-full" disabled={submitting || otpCode.length !== 6}>
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+                Verify & Complete
+              </Button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={sendingCode}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {sendingCode ? 'Sending...' : "Didn't receive the code? Resend"}
+                </button>
               </div>
             </div>
-            <h1 className="font-display text-2xl font-bold text-foreground">
-              {isLogin ? 'Welcome Back' : 'Create Account'}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {isLogin ? 'Sign in to your account' : 'Sign up for a new account'}
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    type="text"
-                    placeholder="John"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required={!isLogin}
-                  />
+          ) : (
+            /* Login / Signup Form */
+            <>
+              <div className="text-center mb-8">
+                <div className="flex justify-center mb-4">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Ticket className="w-7 h-7 text-primary" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    type="text"
-                    placeholder="Doe"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required={!isLogin}
-                  />
-                </div>
+                <h1 className="font-display text-2xl font-bold text-foreground">
+                  {isLogin ? 'Welcome Back' : 'Create Account'}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isLogin ? 'Sign in to your account' : 'Sign up for a new account'}
+                </p>
               </div>
-            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {!isLogin && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        type="text"
+                        placeholder="John"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required={!isLogin}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        type="text"
+                        placeholder="Doe"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required={!isLogin}
+                      />
+                    </div>
+                  </div>
+                )}
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
 
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : isLogin ? (
-                <LogIn className="w-4 h-4 mr-2" />
-              ) : (
-                <UserPlus className="w-4 h-4 mr-2" />
-              )}
-              {isLogin ? 'Sign In' : 'Sign Up'}
-            </Button>
-          </form>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                </div>
 
-          <div className="text-center mt-6">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {isLogin ? "Don't have an account? " : 'Already have an account? '}
-              <span className="text-primary font-medium">
-                {isLogin ? 'Sign Up' : 'Sign In'}
-              </span>
-            </button>
-          </div>
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5" /> Phone Number
+                    </Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+1 (555) 123-4567"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required={!isLogin}
+                    />
+                    <p className="text-xs text-muted-foreground">We'll send a verification code via SMS</p>
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full" disabled={submitting || sendingCode}>
+                  {submitting || sendingCode ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : isLogin ? (
+                    <LogIn className="w-4 h-4 mr-2" />
+                  ) : (
+                    <UserPlus className="w-4 h-4 mr-2" />
+                  )}
+                  {isLogin ? 'Sign In' : sendingCode ? 'Sending Code...' : 'Sign Up'}
+                </Button>
+              </form>
+
+              <div className="text-center mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                  <span className="text-primary font-medium">
+                    {isLogin ? 'Sign Up' : 'Sign In'}
+                  </span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </Layout>

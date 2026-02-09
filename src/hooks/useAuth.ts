@@ -5,6 +5,11 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
+  PhoneAuthProvider,
+  RecaptchaVerifier,
+  linkWithCredential,
+  PhoneMultiFactorGenerator,
+  multiFactor,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -47,23 +52,53 @@ export function useAuth() {
     }
   };
 
-  const signUp = async (email: string, password: string, profile?: { firstName: string; lastName: string }) => {
+  const signUp = async (email: string, password: string, profile?: { firstName: string; lastName: string; phone?: string }) => {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
-      // Create profile document in Firestore
       if (profile) {
         await setDoc(doc(db, 'profiles', cred.user.uid), {
           user_id: cred.user.uid,
           email,
           first_name: profile.firstName,
           last_name: profile.lastName,
+          phone: profile.phone || null,
+          phone_verified: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
       }
+      return { error: null, user: cred.user };
+    } catch (err: any) {
+      return { error: { message: err.message || 'Sign up failed' }, user: null };
+    }
+  };
+
+  const sendPhoneVerification = async (phoneNumber: string, recaptchaContainerId: string) => {
+    try {
+      const recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainerId, {
+        size: 'invisible',
+      });
+      const provider = new PhoneAuthProvider(auth);
+      const verificationId = await provider.verifyPhoneNumber(phoneNumber, recaptchaVerifier);
+      return { verificationId, error: null };
+    } catch (err: any) {
+      return { verificationId: null, error: { message: err.message || 'Failed to send verification code' } };
+    }
+  };
+
+  const verifyPhoneCode = async (verificationId: string, code: string, userId: string) => {
+    try {
+      const credential = PhoneAuthProvider.credential(verificationId, code);
+      // Link phone credential to the current user
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        await linkWithCredential(currentUser, credential);
+      }
+      // Update profile as verified
+      await setDoc(doc(db, 'profiles', userId), { phone_verified: true, updated_at: new Date().toISOString() }, { merge: true });
       return { error: null };
     } catch (err: any) {
-      return { error: { message: err.message || 'Sign up failed' } };
+      return { error: { message: err.message || 'Invalid verification code' } };
     }
   };
 
@@ -72,8 +107,7 @@ export function useAuth() {
     setIsAdmin(false);
   };
 
-  // Expose session-like object for compatibility (user?.id pattern)
   const session = user ? { user } : null;
 
-  return { user, session, loading, isAdmin, signIn, signUp, signOut };
+  return { user, session, loading, isAdmin, signIn, signUp, signOut, sendPhoneVerification, verifyPhoneCode };
 }
