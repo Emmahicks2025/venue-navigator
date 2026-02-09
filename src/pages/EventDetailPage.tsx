@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, Calendar, Clock, Share2, Heart, ChevronLeft, Info, Shield, Ticket, Loader2, Trophy } from 'lucide-react';
+import { FifaTicketDisclosure } from '@/components/venue/FifaTicketDisclosure';
 import { Layout } from '@/components/layout/Layout';
 import { InteractiveSVGMap } from '@/components/venue/InteractiveSVGMap';
 import { TicketList } from '@/components/venue/TicketList';
@@ -21,6 +22,7 @@ const EventDetailPage = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [pendingTickets, setPendingTickets] = useState<{ seats: SelectedSeat[]; goToCheckout: boolean } | null>(null);
 
   const { data: event, isLoading: eventLoading } = useEventById(id);
   
@@ -55,6 +57,24 @@ const EventDetailPage = () => {
     }));
   }, [svgSections]);
 
+  const isWorldCup = event?.name?.toLowerCase().includes('world cup') ?? false;
+
+  const commitTickets = useCallback((seats: SelectedSeat[], goToCheckout: boolean) => {
+    if (!event) return;
+    addToCart({
+      eventId: event.id,
+      eventName: event.name,
+      eventDate: event.date,
+      venueName: event.venue_name,
+      performer: event.performer,
+      performerImage: event.performer_image || '',
+      seats,
+    });
+    toast.success(`${seats.length} ticket${seats.length > 1 ? 's' : ''} added to cart!`);
+    setSelectedSection(null);
+    if (goToCheckout) navigate('/checkout');
+  }, [event, addToCart, navigate]);
+
   if (eventLoading) {
     return (
       <Layout>
@@ -79,23 +99,19 @@ const EventDetailPage = () => {
 
   const selectedSectionData = venueSections.find(s => s.id === selectedSection);
   const selectedSVGSection = svgSections.find(s => s.id === selectedSection);
-  const isWorldCup = event.name.toLowerCase().includes('world cup');
 
   const handleSeatsSelected = (seats: SelectedSeat[], goToCheckout: boolean = false) => {
-    addToCart({
-      eventId: event.id,
-      eventName: event.name,
-      eventDate: event.date,
-      venueName: event.venue_name,
-      performer: event.performer,
-      performerImage: event.performer_image || '',
-      seats,
-    });
-    toast.success(`${seats.length} ticket${seats.length > 1 ? 's' : ''} added to cart!`);
-    setSelectedSection(null);
-    
-    if (goToCheckout) {
-      navigate('/checkout');
+    if (isWorldCup) {
+      setPendingTickets({ seats, goToCheckout });
+    } else {
+      commitTickets(seats, goToCheckout);
+    }
+  };
+
+  const handleDisclosureAccept = () => {
+    if (pendingTickets) {
+      commitTickets(pendingTickets.seats, pendingTickets.goToCheckout);
+      setPendingTickets(null);
     }
   };
 
@@ -290,6 +306,13 @@ const EventDetailPage = () => {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* FIFA World Cup Ticket Disclosure */}
+      <FifaTicketDisclosure
+        open={!!pendingTickets}
+        onAccept={handleDisclosureAccept}
+        onCancel={() => setPendingTickets(null)}
+      />
     </Layout>
   );
 };
