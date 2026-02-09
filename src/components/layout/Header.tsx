@@ -89,15 +89,11 @@ export const Header = () => {
 
             {/* Auth button */}
             {user ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-foreground"
-                onClick={signOut}
-                title="Sign Out"
-              >
-                <LogOut className="w-5 h-5" />
-              </Button>
+              <Link to="/dashboard">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" title="My Dashboard">
+                  <User className="w-5 h-5" />
+                </Button>
+              </Link>
             ) : (
               <Link to="/auth">
                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
@@ -161,12 +157,21 @@ export const Header = () => {
               </Link>
             )}
             {user ? (
-              <button
-                onClick={() => { signOut(); setIsMenuOpen(false); }}
-                className="px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary text-left transition-all duration-200"
-              >
-                Sign Out
-              </button>
+              <>
+                <Link
+                  to="/dashboard"
+                  className="px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  My Dashboard
+                </Link>
+                <button
+                  onClick={() => { signOut(); setIsMenuOpen(false); }}
+                  className="px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary text-left transition-all duration-200"
+                >
+                  Sign Out
+                </button>
+              </>
             ) : (
               <Link
                 to="/auth"

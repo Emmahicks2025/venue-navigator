@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Download, Mail, Calendar } from 'lucide-react';
+import { CheckCircle2, Ticket, Mail, Calendar } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 
@@ -42,7 +42,7 @@ const OrderSuccessPage = () => {
 
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Download className="w-4 h-4 text-primary" />
+                  <Ticket className="w-4 h-4 text-primary" />
                 </div>
                 <div>
                   <p className="font-medium text-foreground">Download Tickets</p>
@@ -68,10 +68,11 @@ const OrderSuccessPage = () => {
                 Browse More Events
               </Button>
             </Link>
-            <Button className="flex-1 bg-primary hover:bg-primary/90">
-              <Download className="w-4 h-4 mr-2" />
-              Download Tickets
-            </Button>
+            <Link to="/dashboard" className="flex-1">
+              <Button className="w-full bg-primary hover:bg-primary/90">
+                View My Tickets
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
