@@ -1,10 +1,10 @@
+import { useState } from 'react';
 import { getFlagUrl } from '@/lib/countryFlags';
 import { Globe } from 'lucide-react';
 
 interface MatchTeamsProps {
   homeTeam: string;
   awayTeam: string;
-  /** 'sm' for compact cards, 'md' for standard, 'lg' for detail pages */
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
@@ -16,18 +16,21 @@ const sizeConfig = {
 };
 
 function FlagOrPlaceholder({ team, flagUrl, flagSize, iconSize }: { team: string; flagUrl: string; flagSize: number; iconSize: number }) {
-  if (flagUrl) {
-    return (
-      <img
-        src={flagUrl}
-        alt={team}
-        className="rounded-sm object-cover shadow-sm"
-        style={{ width: flagSize, height: flagSize * 0.67 }}
-        loading="lazy"
-      />
-    );
+  const [errored, setErrored] = useState(false);
+
+  if (!flagUrl || errored) {
+    return <Globe size={iconSize} className="text-muted-foreground shrink-0" />;
   }
-  return <Globe size={iconSize} className="text-muted-foreground shrink-0" />;
+  return (
+    <img
+      src={flagUrl}
+      alt={team}
+      className="rounded-sm object-cover shadow-sm"
+      style={{ width: flagSize, height: flagSize * 0.67 }}
+      loading="lazy"
+      onError={() => setErrored(true)}
+    />
+  );
 }
 
 export function MatchTeams({ homeTeam, awayTeam, size = 'md', className = '' }: MatchTeamsProps) {
