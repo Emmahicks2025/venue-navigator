@@ -6,6 +6,7 @@ import { SearchBar } from '@/components/search/SearchBar';
 import { EventCard } from '@/components/events/EventCard';
 import { CategoryTabs } from '@/components/events/CategoryTabs';
 import { TopArtistsSection } from '@/components/home/TopArtistsSection';
+import { HeroParticles } from '@/components/home/HeroParticles';
 
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
@@ -59,21 +60,23 @@ const Index = () => {
             className="w-full h-full object-cover scale-110"
             style={{ transform: `scale(1.1) translateY(${scrollY * 0.3}px)` }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10" />
         </div>
 
+        <HeroParticles />
+
         <div className="relative z-10 container mx-auto px-4 text-center">
           <div className="animate-slide-up">
-            <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-primary font-semibold mb-4">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-primary font-semibold mb-4 drop-shadow-lg">
               ✦ Your Premium Ticket Destination ✦
             </p>
             <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-3 tracking-tight leading-[0.9]">
-              <span className="text-foreground">Experience It</span>
+              <span className="text-foreground drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">Experience It</span>
               <br />
-              <span className="text-gradient-primary italic">Live</span>
+              <span className="text-gradient-primary italic drop-shadow-[0_2px_20px_rgba(59,130,246,0.4)]">Live</span>
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground mb-8 max-w-lg mx-auto leading-relaxed">
+            <p className="text-sm sm:text-base text-foreground/80 mb-8 max-w-lg mx-auto leading-relaxed drop-shadow-md">
               Discover and book tickets to the hottest concerts, sports events, theater shows, and more.
             </p>
           </div>
