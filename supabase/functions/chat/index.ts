@@ -96,6 +96,11 @@ serve(async (req) => {
     const data = await response.json();
     const reply = data.choices?.[0]?.message?.content || "Sorry, I couldn't generate a response. Please try again.";
 
+    // Simulate human typing delay based on reply length
+    const wordCount = reply.split(/\s+/).length;
+    const delayMs = Math.min(Math.max(wordCount * 120, 1500), 6000); // 1.5s min, 6s max
+    await new Promise(r => setTimeout(r, delayMs));
+
     return new Response(JSON.stringify({ reply, sessionId }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
