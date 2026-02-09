@@ -16,6 +16,7 @@ import WorldCupPage from "./pages/WorldCupPage";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import MigratePage from "./pages/MigratePage";
+import SetupAdminPage from "./pages/SetupAdminPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/migrate" element={<MigratePage />} />
+            <Route path="/setup-admin" element={<SetupAdminPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
