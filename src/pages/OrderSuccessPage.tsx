@@ -4,7 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 
 const OrderSuccessPage = () => {
-  const orderNumber = `TV${Date.now().toString().slice(-8)}`;
+  const orderNumber = `TO${Date.now().toString().slice(-8)}`;
 
   return (
     <Layout>

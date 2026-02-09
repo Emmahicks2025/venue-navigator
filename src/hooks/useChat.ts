@@ -147,7 +147,7 @@ export function useChat() {
         .map(m => ({ role: m.role === 'admin' ? 'assistant' : m.role, content: m.content }));
 
       let orderContext: string | null = null;
-      const orderMatch = content.match(/[A-Z]{2,}\d{5,}/i) || content.match(/ORD-[A-Z0-9]+/i);
+      const orderMatch = content.match(/TO\d{5,}/i) || content.match(/ORD-[A-Z0-9]+/i);
       if (orderMatch) {
         orderContext = await lookupOrder(orderMatch[0]);
       }
