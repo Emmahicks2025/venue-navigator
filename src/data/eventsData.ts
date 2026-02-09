@@ -293,8 +293,8 @@ interface RawEventData {
 
 // All raw events extracted from Excel files
 const rawEvents: RawEventData[] = [
-  // ========== FIFA WORLD CUP 2026 ========== (now loaded from database, see WorldCupSection)
-  // Legacy local stubs removed - real data comes from Supabase events table
+  // ========== FIFA WORLD CUP 2026 ========== (loaded from database, see WorldCupSection)
+  // Legacy local stubs removed - real data comes from Firestore events collection
 
 
   // ========== CONCERTS ==========
