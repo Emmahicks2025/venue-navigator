@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Music } from 'lucide-react';
+import { Music, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
 import { useTicketmasterImage } from '@/hooks/useTicketmasterImage';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -85,10 +85,27 @@ export const TopArtistsSection = () => {
                 <ArtistCard artist={artist} />
               </CarouselItem>
             ))}
+            {/* View All card at the end */}
+            <CarouselItem className="pl-2 md:pl-3 basis-1/3 sm:basis-1/4 lg:basis-1/5">
+              <Link
+                to="/events/concerts"
+                className="group flex flex-col items-center justify-center w-full aspect-square rounded-full border-2 border-dashed border-primary/30 hover:border-primary hover:bg-primary/5 transition-all duration-300"
+              >
+                <Music className="w-6 h-6 text-primary mb-1" />
+                <span className="text-xs font-semibold text-primary">View All</span>
+              </Link>
+            </CarouselItem>
           </CarouselContent>
           <CarouselPrevious className="hidden sm:flex -left-4 lg:-left-12" />
           <CarouselNext className="hidden sm:flex -right-4 lg:-right-12" />
         </Carousel>
+
+        {/* Mobile swipe hint */}
+        <div className="flex items-center justify-center gap-2 mt-4 sm:hidden text-muted-foreground text-xs">
+          <ChevronLeft className="w-3.5 h-3.5 animate-pulse" />
+          <span>Swipe to explore</span>
+          <ChevronRight className="w-3.5 h-3.5 animate-pulse" />
+        </div>
       </div>
     </section>
   );
