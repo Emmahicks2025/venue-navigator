@@ -4,13 +4,13 @@ import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBf1C2eqGRUxBLpxeBaERZy5Af-2Fnj",
+  apiKey: "AIzaSyBtV2b6qUMXaWDlqvwm8aGM2Hy0Af-2Yzg",
   authDomain: "football-e3f7e.firebaseapp.com",
   projectId: "football-e3f7e",
   storageBucket: "football-e3f7e.firebasestorage.app",
-  messagingSenderId: "730531451260",
-  appId: "1:730531451260:web:b3d92a7c9e4ff59760de69",
-  measurementId: "G-N04981YQ03",
+  messagingSenderId: "735531453260",
+  appId: "1:735531453260:web:b1692a7c7be4f55986dde9",
+  measurementId: "G-N84BRT93DY",
 };
 
 const app = initializeApp(firebaseConfig);
