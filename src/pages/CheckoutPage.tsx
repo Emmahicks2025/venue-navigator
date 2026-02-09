@@ -104,14 +104,13 @@ const CheckoutPage = () => {
         if (ticketsError) throw ticketsError;
       }
 
-      toast.success('Order confirmed! Check your email for tickets.');
       clearCart();
+      toast.success('Order confirmed! Check your email for tickets.');
       navigate('/order-success');
     } catch (err: any) {
       toast.error(err.message || 'Payment failed. Please try again.');
-    } finally {
-      setIsProcessing(false);
       submittingRef.current = false;
+      setIsProcessing(false);
     }
   };
 
