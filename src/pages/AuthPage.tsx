@@ -4,7 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2, LogIn, UserPlus, Ticket, Phone, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -180,24 +180,28 @@ const AuthPage = () => {
           {signupStep === 'verify-phone' ? (
             /* Phone Verification Step */
             <div className="space-y-6">
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <div className="flex justify-center mb-4">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <ShieldCheck className="w-7 h-7 text-primary" />
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <ShieldCheck className="w-8 h-8 text-primary" />
                   </div>
                 </div>
                 <h1 className="font-display text-2xl font-bold text-foreground">Verify Your Phone</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  We sent a 6-digit code to <span className="text-foreground font-medium">{formatPhoneNumber(phone)}</span>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Enter the 6-digit code sent to
                 </p>
+                <p className="text-base font-semibold text-foreground mt-1">{formatPhoneNumber(phone)}</p>
               </div>
 
-              <div className="flex justify-center">
-                <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
-                  <InputOTPGroup>
+              <div className="flex justify-center py-4">
+                <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode} autoFocus>
+                  <InputOTPGroup className="gap-2">
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
                     <InputOTPSlot index={2} />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup className="gap-2">
                     <InputOTPSlot index={3} />
                     <InputOTPSlot index={4} />
                     <InputOTPSlot index={5} />
@@ -205,17 +209,17 @@ const AuthPage = () => {
                 </InputOTP>
               </div>
 
-              <Button onClick={handleVerifyOTP} className="w-full" disabled={submitting || otpCode.length !== 6}>
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+              <Button onClick={handleVerifyOTP} size="lg" className="w-full text-base font-semibold" disabled={submitting || otpCode.length !== 6}>
+                {submitting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShieldCheck className="w-5 h-5 mr-2" />}
                 Verify & Complete
               </Button>
 
-              <div className="text-center">
+              <div className="text-center pt-2">
                 <button
                   type="button"
                   onClick={handleResendCode}
                   disabled={sendingCode}
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors underline-offset-4 hover:underline"
                 >
                   {sendingCode ? 'Sending...' : "Didn't receive the code? Resend"}
                 </button>
