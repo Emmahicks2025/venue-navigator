@@ -21,11 +21,19 @@ function normalizeVenueName(name: string): string {
 async function fetchSVG(name: string): Promise<{ content: string; sections: SVGSection[] }> {
   // Normalize the venue name to handle special characters like &
   const normalizedName = normalizeVenueName(name);
-  // URL-encode the filename segment for spaces and other chars
-  const safeName = encodeURIComponent(normalizedName);
-  const response = await fetch(`/venue-maps/${safeName}.svg`);
+  // Encode each path segment properly - spaces become %20 which works on all servers
+  const url = `/venue-maps/${encodeURIComponent(normalizedName)}.svg`;
+  console.log(`[VenueSVG] Fetching: ${url} (original: "${name}")`);
+  const response = await fetch(url);
   if (!response.ok) throw new Error(`Failed to load venue map: ${response.status}`);
   const content = await response.text();
+  
+  // Verify we got actual SVG content, not an HTML page (SPA fallback)
+  if (!content.includes('<svg') && !content.includes('<?xml')) {
+    console.warn(`[VenueSVG] Response for "${name}" is not SVG (got HTML/other). Content starts with: ${content.substring(0, 100)}`);
+    throw new Error('Response is not SVG content (likely SPA fallback)');
+  }
+  
   const sections = parseSVGSections(content);
   return { content, sections };
 }
