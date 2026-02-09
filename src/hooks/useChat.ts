@@ -147,9 +147,9 @@ export function useChat() {
         .map(m => ({ role: m.role === 'admin' ? 'assistant' : m.role, content: m.content }));
 
       let orderContext: string | null = null;
-      const orderMatch = content.match(/ORD-[A-Z0-9]+/i);
+      const orderMatch = content.match(/[A-Z]{2,}\d{5,}/i) || content.match(/ORD-[A-Z0-9]+/i);
       if (orderMatch) {
-        orderContext = await lookupOrder(orderMatch[0].toUpperCase());
+        orderContext = await lookupOrder(orderMatch[0]);
       }
 
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
