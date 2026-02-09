@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Search, ShoppingCart, User, Menu, X, Ticket, Shield, LogOut } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, X, Ticket, Shield, LogOut, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
@@ -36,7 +36,6 @@ export const Header = () => {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
@@ -52,6 +51,18 @@ export const Header = () => {
                 {link.label}
               </Link>
             ))}
+            <Link
+              to="/events/world-cup"
+              className={cn(
+                'px-4 py-2 text-sm font-bold rounded-lg transition-all duration-200 flex items-center gap-1.5',
+                location.pathname === '/events/world-cup'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/40'
+                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/40'
+              )}
+            >
+              <Trophy className="w-4 h-4 text-yellow-300" />
+              FIFA World Cup
+            </Link>
           </nav>
 
           {/* Actions */}
@@ -133,6 +144,19 @@ export const Header = () => {
                 {link.label}
               </Link>
             ))}
+            <Link
+              to="/events/world-cup"
+              className={cn(
+                'px-4 py-3 text-sm font-bold rounded-lg transition-all duration-200 flex items-center gap-1.5',
+                location.pathname === '/events/world-cup'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/40'
+                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/25'
+              )}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Trophy className="w-4 h-4 text-yellow-300" />
+              FIFA World Cup
+            </Link>
             {isAdmin && (
               <Link
                 to="/admin"
