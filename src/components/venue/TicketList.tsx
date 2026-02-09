@@ -179,11 +179,16 @@ export const TicketList = ({ section, svgSection, onTicketsSelected, onClose, ma
                   <p className="text-sm text-muted-foreground">
                     {ticket.row} • {ticket.seats} ticket{ticket.seats > 1 ? 's' : ''}
                   </p>
-                  <p className="text-xs text-muted-foreground/70">
-                    {matchCategory?.isWorldCup
-                      ? 'Seats will be assigned later by FIFA'
-                      : `Seats: ${ticket.availableSeats.join(', ')}`}
-                  </p>
+                  {matchCategory?.isWorldCup ? (
+                    <p className="text-xs font-medium text-[#FFDB00]/80 mt-1 flex items-center gap-1">
+                      <Trophy className="w-3 h-3" />
+                      Seats will be assigned later by FIFA
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground/70">
+                      Seats: {ticket.availableSeats.join(', ')}
+                    </p>
+                  )}
                   {ticket.seats > 1 && (
                     <div className="flex items-center gap-1 text-xs text-success mt-1">
                       <span className="inline-flex items-center gap-1 bg-success/15 text-success px-2 py-0.5 rounded-full font-medium">
