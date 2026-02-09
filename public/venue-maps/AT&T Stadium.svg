@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" width="1000" height="800">
+  <!-- Background -->
+  <rect width="1000" height="800" fill="#1a1a2e"/>
+  
+  <!-- Field/Pitch Area -->
+  <rect x="300" y="180" width="400" height="240" rx="8" fill="#2d6a4f" stroke="#40916c" stroke-width="2"/>
+  <line x1="500" y1="180" x2="500" y2="420" stroke="#52b788" stroke-width="1" stroke-dasharray="4"/>
+  <circle cx="500" cy="300" r="40" fill="none" stroke="#52b788" stroke-width="1"/>
+  <rect x="310" y="260" width="60" height="80" fill="none" stroke="#52b788" stroke-width="1"/>
+  <rect x="630" y="260" width="60" height="80" fill="none" stroke="#52b788" stroke-width="1"/>
+
+  <!-- Club Level End Zone Left -->
+  <g data-section-id="club-ez-left" data-rows="8" data-seats-per-row="30" data-price-min="180" data-price-max="400" data-current-price="320" data-available="true">
+    <title>Section Club EZ Left | Club Level</title>
+    <path d="M180 200 L280 180 L280 420 L180 400 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Club Level End Zone Right -->
+  <g data-section-id="club-ez-right" data-rows="8" data-seats-per-row="30" data-price-min="180" data-price-max="400" data-current-price="320" data-available="true">
+    <title>Section Club EZ Right | Club Level</title>
+    <path d="M720 180 L820 200 L820 400 L720 420 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Floor Seats Left -->
+  <g data-section-id="floor-left" data-rows="5" data-seats-per-row="20" data-price-min="250" data-price-max="500" data-current-price="450" data-available="true">
+    <title>Section Floor Left | Floor Level</title>
+    <rect x="300" y="130" width="190" height="40" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Floor Seats Right -->
+  <g data-section-id="floor-right" data-rows="5" data-seats-per-row="20" data-price-min="250" data-price-max="500" data-current-price="450" data-available="true">
+    <title>Section Floor Right | Floor Level</title>
+    <rect x="510" y="130" width="190" height="40" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Lower Bowl Left Side -->
+  <g data-section-id="lower-left" data-rows="15" data-seats-per-row="25" data-price-min="120" data-price-max="280" data-current-price="200" data-available="true">
+    <title>Section Lower Left | Lower Bowl</title>
+    <path d="M100 220 L160 200 L160 400 L100 420 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Lower Bowl Right Side -->
+  <g data-section-id="lower-right" data-rows="15" data-seats-per-row="25" data-price-min="120" data-price-max="280" data-current-price="200" data-available="true">
+    <title>Section Lower Right | Lower Bowl</title>
+    <path d="M840 200 L900 220 L900 420 L840 400 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Lower Bowl Center South -->
+  <g data-section-id="lower-south" data-rows="18" data-seats-per-row="40" data-price-min="100" data-price-max="250" data-current-price="180" data-available="true">
+    <title>Section Lower South | Lower Bowl</title>
+    <rect x="280" y="430" width="440" height="55" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Mezzanine Left -->
+  <g data-section-id="mezz-left" data-rows="10" data-seats-per-row="20" data-price-min="80" data-price-max="180" data-current-price="140" data-available="true">
+    <title>Section Mezz Left | Mezzanine</title>
+    <path d="M60 240 L85 225 L85 425 L60 440 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Mezzanine Right -->
+  <g data-section-id="mezz-right" data-rows="10" data-seats-per-row="20" data-price-min="80" data-price-max="180" data-current-price="140" data-available="true">
+    <title>Section Mezz Right | Mezzanine</title>
+    <path d="M915 225 L940 240 L940 440 L915 425 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Mezzanine South -->
+  <g data-section-id="mezz-south" data-rows="12" data-seats-per-row="35" data-price-min="70" data-price-max="160" data-current-price="120" data-available="true">
+    <title>Section Mezz South | Mezzanine</title>
+    <rect x="250" y="500" width="500" height="50" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Deck Left -->
+  <g data-section-id="upper-left" data-rows="12" data-seats-per-row="18" data-price-min="40" data-price-max="100" data-current-price="70" data-available="true">
+    <title>Section Upper Left | Upper Deck</title>
+    <path d="M20 260 L45 245 L45 445 L20 460 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Deck Right -->
+  <g data-section-id="upper-right" data-rows="12" data-seats-per-row="18" data-price-min="40" data-price-max="100" data-current-price="70" data-available="true">
+    <title>Section Upper Right | Upper Deck</title>
+    <path d="M955 245 L980 260 L980 460 L955 445 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Deck South -->
+  <g data-section-id="upper-south" data-rows="15" data-seats-per-row="45" data-price-min="30" data-price-max="80" data-current-price="55" data-available="true">
+    <title>Section Upper South | Upper Deck</title>
+    <rect x="220" y="565" width="560" height="55" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner Sections -->
+  <g data-section-id="corner-sw" data-rows="10" data-seats-per-row="15" data-price-min="50" data-price-max="120" data-current-price="85" data-available="true">
+    <title>Section Corner SW | Corner</title>
+    <path d="M100 440 L250 500 L220 565 L60 470 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <g data-section-id="corner-se" data-rows="10" data-seats-per-row="15" data-price-min="50" data-price-max="120" data-current-price="85" data-available="true">
+    <title>Section Corner SE | Corner</title>
+    <path d="M750 500 L900 440 L940 470 L780 565 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+</svg>

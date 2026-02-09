@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 650" width="800" height="650">
+  <!-- Background -->
+  <rect width="800" height="650" fill="#1a1a2e"/>
+  
+  <!-- Pitch Area -->
+  <rect x="220" y="140" width="360" height="220" rx="8" fill="#2d6a4f" stroke="#40916c" stroke-width="2"/>
+  <line x1="400" y1="140" x2="400" y2="360" stroke="#52b788" stroke-width="1" stroke-dasharray="4"/>
+  <circle cx="400" cy="250" r="30" fill="none" stroke="#52b788" stroke-width="1"/>
+  <rect x="230" y="215" width="45" height="70" fill="none" stroke="#52b788" stroke-width="1"/>
+  <rect x="525" y="215" width="45" height="70" fill="none" stroke="#52b788" stroke-width="1"/>
+
+  <!-- West Stand (Main) -->
+  <g data-section-id="west-stand" data-rows="18" data-seats-per-row="35" data-price-min="120" data-price-max="350" data-current-price="260" data-available="true">
+    <title>Section West Stand | Main Stand</title>
+    <path d="M80 155 L200 140 L200 365 L80 380 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- East Stand -->
+  <g data-section-id="east-stand" data-rows="18" data-seats-per-row="35" data-price-min="100" data-price-max="300" data-current-price="220" data-available="true">
+    <title>Section East Stand | East Stand</title>
+    <path d="M600 140 L720 155 L720 380 L600 365 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- North End -->
+  <g data-section-id="north-end" data-rows="12" data-seats-per-row="25" data-price-min="70" data-price-max="180" data-current-price="130" data-available="true">
+    <title>Section North End | North Stand</title>
+    <rect x="230" y="80" width="340" height="50" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- South End -->
+  <g data-section-id="south-end" data-rows="14" data-seats-per-row="28" data-price-min="60" data-price-max="160" data-current-price="110" data-available="true">
+    <title>Section South End | South Stand</title>
+    <rect x="230" y="375" width="340" height="55" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper West -->
+  <g data-section-id="upper-west" data-rows="12" data-seats-per-row="30" data-price-min="50" data-price-max="130" data-current-price="90" data-available="true">
+    <title>Section Upper West | Upper West</title>
+    <path d="M30 170 L65 160 L65 378 L30 390 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper East -->
+  <g data-section-id="upper-east" data-rows="12" data-seats-per-row="30" data-price-min="50" data-price-max="130" data-current-price="90" data-available="true">
+    <title>Section Upper East | Upper East</title>
+    <path d="M735 160 L770 170 L770 390 L735 378 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper South -->
+  <g data-section-id="upper-south" data-rows="15" data-seats-per-row="35" data-price-min="30" data-price-max="80" data-current-price="55" data-available="true">
+    <title>Section Upper South | Upper South</title>
+    <rect x="190" y="445" width="420" height="55" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner NW -->
+  <g data-section-id="corner-nw" data-rows="8" data-seats-per-row="10" data-price-min="55" data-price-max="120" data-current-price="85" data-available="true">
+    <title>Section Corner NW | Corner</title>
+    <path d="M80 100 L200 80 L200 140 L80 155 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner NE -->
+  <g data-section-id="corner-ne" data-rows="8" data-seats-per-row="10" data-price-min="55" data-price-max="120" data-current-price="85" data-available="true">
+    <title>Section Corner NE | Corner</title>
+    <path d="M600 80 L720 100 L720 155 L600 140 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner SW -->
+  <g data-section-id="corner-sw" data-rows="8" data-seats-per-row="10" data-price-min="45" data-price-max="100" data-current-price="70" data-available="true">
+    <title>Section Corner SW | Corner</title>
+    <path d="M80 380 L200 365 L200 445 L100 445 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner SE -->
+  <g data-section-id="corner-se" data-rows="8" data-seats-per-row="10" data-price-min="45" data-price-max="100" data-current-price="70" data-available="true">
+    <title>Section Corner SE | Corner</title>
+    <path d="M600 365 L720 380 L700 445 L600 445 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+</svg>
