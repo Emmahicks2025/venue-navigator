@@ -237,8 +237,8 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
             {[
-              { value: '10M+', label: 'Tickets Sold' },
-              { value: '50K+', label: 'Events Listed' },
+              { value: '45K+', label: 'Tickets Sold' },
+              { value: '1,200+', label: 'Events Listed' },
               { value: '100%', label: 'Secure Checkout' },
               { value: '24/7', label: 'Customer Support' },
             ].map((stat) => (
