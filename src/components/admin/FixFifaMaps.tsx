@@ -94,7 +94,7 @@ export function FixFifaMaps() {
         const currentMap = event.svg_map_name || null;
         const matchedMap = findSvgMapName(event.venue_name || '');
 
-        if (matchedMap && matchedMap !== currentMap) {
+        if (matchedMap && !currentMap) {
           fixes.push({
             eventId: event.id,
             eventName: event.name,
