@@ -85,6 +85,7 @@ const COUNTRY_CODES: Record<string, string> = {
   'China': 'cn',
   'India': 'in',
   'Russia': 'ru',
+  'South Africa': 'za',
   'TBD': '',
 };
 
