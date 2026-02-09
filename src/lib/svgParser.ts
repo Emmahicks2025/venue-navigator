@@ -109,9 +109,15 @@ export function convertToVenueSections(svgSections: SVGSection[]) {
 }
 
 // Load and parse SVG from URL
+// Normalize venue name for SVG filename lookup
+function normalizeVenueName(name: string): string {
+  return name.replace(/&/g, '');
+}
+
 export async function loadVenueSVG(venueName: string): Promise<{ svgContent: string; sections: SVGSection[] } | null> {
   try {
-    const safeName = encodeURIComponent(venueName);
+    const normalizedName = normalizeVenueName(venueName);
+    const safeName = encodeURIComponent(normalizedName);
     const response = await fetch(`/venue-maps/${safeName}.svg`);
     if (!response.ok) return null;
 

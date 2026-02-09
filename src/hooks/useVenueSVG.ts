@@ -11,10 +11,18 @@ interface UseVenueSVGResult {
   isFallback: boolean;
 }
 
+// Normalize venue name for SVG filename lookup
+// Handles special characters that cause issues with dev server
+function normalizeVenueName(name: string): string {
+  // Replace & with empty (AT&T -> ATT) to match renamed files
+  return name.replace(/&/g, '');
+}
+
 async function fetchSVG(name: string): Promise<{ content: string; sections: SVGSection[] }> {
-  // IMPORTANT: venue SVG filenames contain spaces and other special characters.
-  // We must URL-encode the filename segment or the request may 404 and trigger the fallback.
-  const safeName = encodeURIComponent(name);
+  // Normalize the venue name to handle special characters like &
+  const normalizedName = normalizeVenueName(name);
+  // URL-encode the filename segment for spaces and other chars
+  const safeName = encodeURIComponent(normalizedName);
   const response = await fetch(`/venue-maps/${safeName}.svg`);
   if (!response.ok) throw new Error(`Failed to load venue map: ${response.status}`);
   const content = await response.text();
