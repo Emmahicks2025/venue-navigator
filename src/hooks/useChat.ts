@@ -221,41 +221,13 @@ export function useChat() {
       const data = await resp.json();
       const reply = data.reply || "Sorry, I couldn't process that. Please try again.";
 
-      // Simulate typing effect — reveal words progressively
+      // Show full reply at once (delay is handled on backend)
       setIsLoading(false);
-      setIsTyping(true);
-      const words = reply.split(' ');
-      const typingMsgId = `local_${++msgCounter}`;
-      setMessages(prev => [...prev, { id: typingMsgId, role: 'assistant', content: '', created_at: new Date().toISOString() }]);
 
-      let wordIndex = 0;
-      const totalWords = words.length;
-      // Scale delay based on response length: longer replies = slower typing
-      const baseDelay = totalWords > 40 ? 140 : totalWords > 20 ? 110 : 80;
-      const jitter = totalWords > 40 ? 120 : totalWords > 20 ? 90 : 60;
-
-      await new Promise<void>((resolve) => {
-        const tick = () => {
-          wordIndex++;
-          const partial = words.slice(0, wordIndex).join(' ');
-          setMessages(prev => prev.map(m => m.id === typingMsgId ? { ...m, content: partial } : m));
-          if (wordIndex < words.length) {
-            // Add extra pauses after punctuation (sentences, commas)
-            const lastWord = words[wordIndex - 1];
-            const isPause = /[.!?]$/.test(lastWord);
-            const isComma = /,$/.test(lastWord);
-            let delay = baseDelay + Math.random() * jitter;
-            if (isPause) delay += 400 + Math.random() * 300; // pause after sentences
-            if (isComma) delay += 150 + Math.random() * 150; // slight pause after commas
-            typingRef.current = setTimeout(tick, delay);
-          } else {
-            setIsTyping(false);
-            resolve();
-          }
-        };
-        const initialDelay = 800 + Math.random() * 1200; // 0.8-2s before first word
-        typingRef.current = setTimeout(tick, initialDelay);
-      });
+      // Add AI reply locally
+      if (!firestoreConnected) {
+        addLocalMessage('assistant', reply);
+      }
 
       // Persist AI reply to Firestore
       if (firestoreConnected && sessionId) {
