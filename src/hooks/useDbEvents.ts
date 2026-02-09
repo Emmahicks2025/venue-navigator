@@ -110,14 +110,20 @@ export function useDbEventsByCategory(category: string | undefined) {
   return useQuery({
     queryKey: ['db-events-category', category],
     queryFn: async () => {
-      let q;
-      if (category && category !== 'all') {
-        q = query(eventsRef, where('category', '==', category), orderBy('date', 'asc'), limit(200));
-      } else {
-        q = query(eventsRef, orderBy('date', 'asc'), limit(200));
+      try {
+        let q;
+        if (category && category !== 'all') {
+          q = query(eventsRef, where('category', '==', category), orderBy('date', 'asc'), limit(200));
+        } else {
+          q = query(eventsRef, orderBy('date', 'asc'), limit(200));
+        }
+        const snapshot = await getDocs(q);
+        console.log('[DEBUG] Events by category', category, 'count:', snapshot.docs.length);
+        return snapshot.docs.map(docToDbEvent);
+      } catch (err) {
+        console.error('[DEBUG] Events by category error:', err);
+        throw err;
       }
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(docToDbEvent);
     },
   });
 }
@@ -126,9 +132,15 @@ export function useFeaturedDbEvents() {
   return useQuery({
     queryKey: ['db-events-featured'],
     queryFn: async () => {
-      const q = query(eventsRef, where('is_featured', '==', true), orderBy('date', 'asc'), limit(20));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(docToDbEvent);
+      try {
+        const q = query(eventsRef, where('is_featured', '==', true), orderBy('date', 'asc'), limit(20));
+        const snapshot = await getDocs(q);
+        console.log('[DEBUG] Featured events count:', snapshot.docs.length);
+        return snapshot.docs.map(docToDbEvent);
+      } catch (err) {
+        console.error('[DEBUG] Featured events error:', err);
+        throw err;
+      }
     },
   });
 }
