@@ -111,12 +111,13 @@ export function convertToVenueSections(svgSections: SVGSection[]) {
 // Load and parse SVG from URL
 export async function loadVenueSVG(venueName: string): Promise<{ svgContent: string; sections: SVGSection[] } | null> {
   try {
-    const response = await fetch(`/venue-maps/${venueName}.svg`);
+    const safeName = encodeURIComponent(venueName);
+    const response = await fetch(`/venue-maps/${safeName}.svg`);
     if (!response.ok) return null;
-    
+
     const svgContent = await response.text();
     const sections = parseSVGSections(svgContent);
-    
+
     return { svgContent, sections };
   } catch (error) {
     console.error(`Failed to load SVG for ${venueName}:`, error);
