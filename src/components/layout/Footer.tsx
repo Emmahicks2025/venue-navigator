@@ -76,10 +76,10 @@ export const Footer = () => {
             © 2026 TixOrbit. All rights reserved.
           </p>
           <div className="flex gap-6">
-            <Link to="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Privacy Policy
             </Link>
-            <Link to="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Terms of Service
             </Link>
           </div>

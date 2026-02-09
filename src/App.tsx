@@ -18,7 +18,10 @@ import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import MigratePage from "./pages/MigratePage";
 import SetupAdminPage from "./pages/SetupAdminPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
+import { CookieConsent } from "./components/layout/CookieConsent";
 
 const queryClient = new QueryClient();
 
@@ -44,9 +47,12 @@ const App = () => (
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/migrate" element={<MigratePage />} />
             <Route path="/setup-admin" element={<SetupAdminPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ChatWidget />
+          <CookieConsent />
         </BrowserRouter>
       </TooltipProvider>
     </CartProvider>
