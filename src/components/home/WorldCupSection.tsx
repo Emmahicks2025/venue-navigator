@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Trophy, ChevronRight, Calendar, MapPin, Loader2 } from 'lucide-react';
+import { MatchTeams } from '@/components/venue/MatchTeams';
 import { Button } from '@/components/ui/button';
 import { useWorldCupEvents } from '@/hooks/useDbEvents';
 import { formatDate, formatPrice } from '@/data/events';
@@ -86,9 +87,7 @@ export function WorldCupSection() {
                     </span>
                   </div>
                 </div>
-                <h3 className="font-semibold text-white text-sm mb-2">
-                  {match.home_team} vs {match.away_team}
-                </h3>
+                <MatchTeams homeTeam={match.home_team} awayTeam={match.away_team} size="sm" className="text-white mb-2" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 text-xs text-emerald-200/60">
                     <span className="flex items-center gap-1">
