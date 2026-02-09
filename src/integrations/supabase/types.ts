@@ -95,6 +95,39 @@ export type Database = {
         }
         Relationships: []
       }
+      performer_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_height: number | null
+          image_url: string
+          image_width: number | null
+          performer_name: string
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_height?: number | null
+          image_url: string
+          image_width?: number | null
+          performer_name: string
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_height?: number | null
+          image_url?: string
+          image_width?: number | null
+          performer_name?: string
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

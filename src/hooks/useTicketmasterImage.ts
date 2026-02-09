@@ -1,5 +1,5 @@
-// Simple hook that returns the event's existing image (from Unsplash CDN mapping)
-// The Ticketmaster direct API is disabled; images come from the performerImages map in eventsData.ts
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 // Default category images as final fallback
 function getDefaultCategoryImage(category: string): string {
@@ -13,13 +13,97 @@ function getDefaultCategoryImage(category: string): string {
   return defaults[category] || defaults.concerts;
 }
 
-// Hook to get performer image - uses the Unsplash CDN image already assigned to the event
+// In-memory cache to avoid redundant calls during the session
+const imageCache = new Map<string, string>();
+// Track in-flight requests to avoid duplicate fetches
+const pendingRequests = new Map<string, Promise<string | null>>();
+
+async function fetchFromTicketmaster(performer: string): Promise<string | null> {
+  const key = performer.toLowerCase().trim();
+  
+  // Check in-flight request
+  if (pendingRequests.has(key)) {
+    return pendingRequests.get(key)!;
+  }
+
+  const promise = (async () => {
+    try {
+      // First check the database cache
+      const { data: cached } = await supabase
+        .from('performer_images')
+        .select('image_url')
+        .ilike('performer_name', key)
+        .maybeSingle();
+
+      if (cached?.image_url) {
+        imageCache.set(key, cached.image_url);
+        return cached.image_url;
+      }
+
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('fetch-performer-image', {
+        body: { performer },
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        return null;
+      }
+
+      if (data?.imageUrl) {
+        imageCache.set(key, data.imageUrl);
+        return data.imageUrl as string;
+      }
+
+      return null;
+    } catch (err) {
+      console.error('Failed to fetch performer image:', err);
+      return null;
+    } finally {
+      pendingRequests.delete(key);
+    }
+  })();
+
+  pendingRequests.set(key, promise);
+  return promise;
+}
+
 export function useTicketmasterImage(
   performer: string,
   existingImage: string | undefined,
   category: string
 ): { imageUrl: string; isLoading: boolean } {
-  // Simply return the existing image (from the performerImages map), or a category default
-  const imageUrl = existingImage || getDefaultCategoryImage(category);
-  return { imageUrl, isLoading: false };
+  const fallback = existingImage || getDefaultCategoryImage(category);
+  const cacheKey = performer.toLowerCase().trim();
+  
+  // If we already have a cached Ticketmaster image, use it immediately
+  const cachedUrl = imageCache.get(cacheKey);
+  
+  const [imageUrl, setImageUrl] = useState<string>(cachedUrl || fallback);
+  const [isLoading, setIsLoading] = useState<boolean>(!cachedUrl);
+
+  useEffect(() => {
+    if (cachedUrl) {
+      setImageUrl(cachedUrl);
+      setIsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    fetchFromTicketmaster(performer).then((url) => {
+      if (!cancelled && url) {
+        setImageUrl(url);
+      }
+      if (!cancelled) {
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [performer, cachedUrl]);
+
+  return { imageUrl, isLoading };
 }
