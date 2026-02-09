@@ -34,37 +34,43 @@ const Index = () => {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="relative pt-20 pb-12 sm:pt-24 sm:pb-16 lg:pt-32 lg:pb-20 overflow-hidden">
+      <section className="relative pt-24 pb-14 sm:pt-28 sm:pb-18 lg:pt-36 lg:pb-24 overflow-hidden">
         <div className="absolute inset-0">
           <img
             src={heroImage}
             alt="Concert stadium"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover scale-105"
           />
-          <div className="absolute inset-0 hero-gradient" />
-          <div className="absolute inset-0 section-glow opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10" />
         </div>
 
         <div className="relative z-10 container mx-auto px-4 text-center">
           <div className="animate-slide-up">
-            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 tracking-tight">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-primary font-semibold mb-4">
+              ✦ Your Premium Ticket Destination ✦
+            </p>
+            <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-3 tracking-tight leading-[0.9]">
               <span className="text-foreground">Experience It</span>
               <br />
-              <span className="text-gradient-primary">Live</span>
+              <span className="text-gradient-primary italic">Live</span>
             </h1>
-            <p className="text-base sm:text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base text-muted-foreground mb-8 max-w-lg mx-auto leading-relaxed">
               Discover and book tickets to the hottest concerts, sports events, theater shows, and more.
             </p>
           </div>
 
           <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            <SearchBar variant="hero" className="mb-6" />
+            <SearchBar variant="hero" className="mb-8" />
           </div>
 
           <div className="animate-slide-up w-full overflow-hidden" style={{ animationDelay: '0.2s' }}>
             <CategoryTabs />
           </div>
         </div>
+
+        {/* Bottom fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </section>
 
       {/* Top Artists */}
