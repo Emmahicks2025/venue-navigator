@@ -13,47 +13,52 @@ interface UseVenueSVGResult {
   isFallback: boolean;
 }
 
-// Normalize venue name for lookup
 function normalizeVenueName(name: string): string {
   return name.replace(/&/g, '');
 }
 
-// In-memory cache to avoid repeated Firestore reads
+// In-memory cache
 const svgCache = new Map<string, { content: string; sections: SVGSection[] }>();
 
 async function fetchSVGFromFirestore(name: string): Promise<{ content: string; sections: SVGSection[] }> {
   const normalizedName = normalizeVenueName(name);
-  
-  // Check cache first
+
   if (svgCache.has(normalizedName)) {
-    console.log(`[VenueSVG] Cache hit: "${normalizedName}"`);
     return svgCache.get(normalizedName)!;
   }
 
-  console.log(`[VenueSVG] Fetching from Firestore: "${normalizedName}" (original: "${name}")`);
-  
-  const venueRef = collection(db, 'venue_maps');
-  const q = query(venueRef, where('venue_name', '==', normalizedName));
-  const snapshot = await getDocs(q);
+  console.log(`[VenueSVG] Trying Firestore: "${normalizedName}"`);
 
-  if (snapshot.empty) {
-    throw new Error(`Venue map not found in Firestore: ${normalizedName}`);
+  const snapshot = await getDocs(
+    query(collection(db, 'venue_maps'), where('venue_name', '==', normalizedName))
+  );
+
+  if (!snapshot.empty) {
+    const content = snapshot.docs[0].data().svg_content as string;
+    if (content && content.includes('<svg')) {
+      const sections = parseSVGSections(content);
+      const result = { content, sections };
+      svgCache.set(normalizedName, result);
+      return result;
+    }
   }
 
-  const doc = snapshot.docs[0];
-  const content = doc.data().svg_content as string;
+  // Fallback: try fetching from static /venue-maps/ (works in dev)
+  console.log(`[VenueSVG] Firestore miss, trying static file: "${normalizedName}"`);
+  const url = `/venue-maps/${encodeURIComponent(normalizedName)}.svg`;
+  const response = await fetch(url);
 
-  if (!content || !content.includes('<svg')) {
-    throw new Error(`Invalid SVG content for venue: ${normalizedName}`);
+  if (response.ok) {
+    const content = await response.text();
+    if (content.includes('<svg') || content.includes('<?xml')) {
+      const sections = parseSVGSections(content);
+      const result = { content, sections };
+      svgCache.set(normalizedName, result);
+      return result;
+    }
   }
 
-  const sections = parseSVGSections(content);
-  const result = { content, sections };
-  
-  // Cache the result
-  svgCache.set(normalizedName, result);
-  
-  return result;
+  throw new Error(`Venue map not found: ${normalizedName}`);
 }
 
 export function useVenueSVG(venueName: string | undefined): UseVenueSVGResult {
@@ -76,16 +81,11 @@ export function useVenueSVG(venueName: string | undefined): UseVenueSVGResult {
 
       try {
         const result = await fetchSVGFromFirestore(venueName);
-
-        if (result.sections.length === 0) {
-          throw new Error('Map has no interactive sections');
-        }
-
+        if (result.sections.length === 0) throw new Error('Map has no interactive sections');
         setSvgContent(result.content);
         setSections(result.sections);
       } catch (primaryErr) {
         console.warn(`Primary map failed for "${venueName}", loading fallback...`, primaryErr);
-
         if (venueName === FALLBACK_MAP) {
           setError('Failed to load venue map');
           setSvgContent(null);
@@ -93,14 +93,12 @@ export function useVenueSVG(venueName: string | undefined): UseVenueSVGResult {
           setLoading(false);
           return;
         }
-
         try {
           const fallback = await fetchSVGFromFirestore(FALLBACK_MAP);
           setSvgContent(fallback.content);
           setSections(fallback.sections);
           setIsFallback(true);
-        } catch (fallbackErr) {
-          console.error('Fallback map also failed:', fallbackErr);
+        } catch {
           setError('Failed to load venue map');
           setSvgContent(null);
           setSections([]);
