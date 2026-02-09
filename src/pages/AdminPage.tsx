@@ -4,7 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EventsManager } from '@/components/admin/EventsManager';
 import { VenueMapsManager } from '@/components/admin/VenueMapsManager';
-import { FixFifaMaps } from '@/components/admin/FixFifaMaps';
+import { FifaEventsManager } from '@/components/admin/FifaEventsManager';
 import { Calendar, Map, Loader2, ShieldAlert, Trophy } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -56,13 +56,13 @@ const AdminPage = () => {
               <Calendar className="w-4 h-4" />
               Events
             </TabsTrigger>
+            <TabsTrigger value="fifa" className="gap-2">
+              <Trophy className="w-4 h-4" />
+              FIFA World Cup
+            </TabsTrigger>
             <TabsTrigger value="venues" className="gap-2">
               <Map className="w-4 h-4" />
               Venue Maps
-            </TabsTrigger>
-            <TabsTrigger value="fifa" className="gap-2">
-              <Trophy className="w-4 h-4" />
-              FIFA Maps
             </TabsTrigger>
           </TabsList>
 
@@ -70,12 +70,12 @@ const AdminPage = () => {
             <EventsManager />
           </TabsContent>
 
-          <TabsContent value="venues">
-            <VenueMapsManager />
+          <TabsContent value="fifa">
+            <FifaEventsManager />
           </TabsContent>
 
-          <TabsContent value="fifa">
-            <FixFifaMaps />
+          <TabsContent value="venues">
+            <VenueMapsManager />
           </TabsContent>
         </Tabs>
       </div>
