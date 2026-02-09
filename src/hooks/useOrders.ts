@@ -79,7 +79,28 @@ export function useUserTickets() {
         .order('event_date', { ascending: true });
 
       if (error) throw error;
-      return data as TicketRow[];
+      const tickets = data as TicketRow[];
+
+      // Enrich tickets missing performer_image from performer_images table
+      const missingImage = tickets.filter((t) => !t.performer_image && t.performer);
+      if (missingImage.length > 0) {
+        const performerNames = [...new Set(missingImage.map((t) => t.performer!))];
+        const { data: images } = await supabase
+          .from('performer_images')
+          .select('performer_name, image_url')
+          .in('performer_name', performerNames);
+
+        if (images && images.length > 0) {
+          const imageMap = new Map(images.map((img) => [img.performer_name, img.image_url]));
+          tickets.forEach((t) => {
+            if (!t.performer_image && t.performer && imageMap.has(t.performer)) {
+              t.performer_image = imageMap.get(t.performer)!;
+            }
+          });
+        }
+      }
+
+      return tickets;
     },
     enabled: !!user,
   });
