@@ -13,60 +13,138 @@ function getDefaultCategoryImage(category: string): string {
   return defaults[category] || defaults.concerts;
 }
 
-// In-memory cache to avoid redundant calls during the session
+// ── Global image cache & batch fetcher ──────────────────────────────
+
+// Session-level cache: performer name (lowercase) → image URL
 const imageCache = new Map<string, string>();
-// Track in-flight requests to avoid duplicate fetches
-const pendingRequests = new Map<string, Promise<string | null>>();
 
-async function fetchFromTicketmaster(performer: string): Promise<string | null> {
-  const key = performer.toLowerCase().trim();
-  
-  // Check in-flight request
-  if (pendingRequests.has(key)) {
-    return pendingRequests.get(key)!;
-  }
+// Tracks whether we've loaded the DB cache already
+let dbCacheLoaded = false;
+let dbCachePromise: Promise<void> | null = null;
 
-  const promise = (async () => {
+// Pending batch: performers waiting to be fetched from Ticketmaster
+let pendingPerformers = new Set<string>();
+let batchTimer: ReturnType<typeof setTimeout> | null = null;
+let batchPromise: Promise<void> | null = null;
+const batchListeners = new Map<string, Array<(url: string | null) => void>>();
+
+// Load ALL cached images from the database at once (runs once per session)
+async function loadDbCache(): Promise<void> {
+  if (dbCacheLoaded) return;
+  if (dbCachePromise) return dbCachePromise;
+
+  dbCachePromise = (async () => {
     try {
-      // First check the database cache
-      const { data: cached } = await supabase
+      const { data, error } = await supabase
         .from('performer_images')
-        .select('image_url')
-        .ilike('performer_name', key)
-        .maybeSingle();
+        .select('performer_name, image_url');
 
-      if (cached?.image_url) {
-        imageCache.set(key, cached.image_url);
-        return cached.image_url;
+      if (!error && data) {
+        for (const row of data) {
+          imageCache.set(row.performer_name.toLowerCase(), row.image_url);
+        }
+        console.log(`[ImageCache] Loaded ${data.length} cached performer images from DB`);
       }
-
-      // Call the edge function
-      const { data, error } = await supabase.functions.invoke('fetch-performer-image', {
-        body: { performer },
-      });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        return null;
-      }
-
-      if (data?.imageUrl) {
-        imageCache.set(key, data.imageUrl);
-        return data.imageUrl as string;
-      }
-
-      return null;
     } catch (err) {
-      console.error('Failed to fetch performer image:', err);
-      return null;
+      console.error('[ImageCache] Failed to load DB cache:', err);
     } finally {
-      pendingRequests.delete(key);
+      dbCacheLoaded = true;
+      dbCachePromise = null;
     }
   })();
 
-  pendingRequests.set(key, promise);
-  return promise;
+  return dbCachePromise;
 }
+
+// Schedule a batch fetch for all pending performers
+function scheduleBatchFetch(performer: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const key = performer.toLowerCase();
+
+    // Register listener
+    if (!batchListeners.has(key)) {
+      batchListeners.set(key, []);
+    }
+    batchListeners.get(key)!.push(resolve);
+
+    pendingPerformers.add(performer);
+
+    // Debounce: wait 100ms to collect all performers from the render cycle
+    if (batchTimer) clearTimeout(batchTimer);
+    batchTimer = setTimeout(() => {
+      executeBatchFetch();
+    }, 100);
+  });
+}
+
+async function executeBatchFetch(): Promise<void> {
+  // If already running, the new performers will be picked up in the next batch
+  if (batchPromise) return;
+
+  const performers = Array.from(pendingPerformers);
+  pendingPerformers.clear();
+  batchTimer = null;
+
+  if (performers.length === 0) return;
+
+  console.log(`[ImageCache] Batch fetching ${performers.length} performers from Ticketmaster...`);
+
+  batchPromise = (async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-performer-image', {
+        body: { performers },
+      });
+
+      if (error) {
+        console.error('[ImageCache] Batch fetch error:', error);
+        // Resolve all listeners with null
+        for (const performer of performers) {
+          const key = performer.toLowerCase();
+          const listeners = batchListeners.get(key) || [];
+          listeners.forEach(cb => cb(null));
+          batchListeners.delete(key);
+        }
+        return;
+      }
+
+      const images = data?.images || {};
+
+      for (const performer of performers) {
+        const key = performer.toLowerCase();
+        const imageUrl = images[performer] || null;
+
+        if (imageUrl) {
+          imageCache.set(key, imageUrl);
+        }
+
+        const listeners = batchListeners.get(key) || [];
+        listeners.forEach(cb => cb(imageUrl));
+        batchListeners.delete(key);
+      }
+
+      console.log(`[ImageCache] Batch complete: ${Object.values(images).filter(Boolean).length} images found`);
+    } catch (err) {
+      console.error('[ImageCache] Batch fetch failed:', err);
+      for (const performer of performers) {
+        const key = performer.toLowerCase();
+        const listeners = batchListeners.get(key) || [];
+        listeners.forEach(cb => cb(null));
+        batchListeners.delete(key);
+      }
+    } finally {
+      batchPromise = null;
+
+      // If more performers were added while we were fetching, process them
+      if (pendingPerformers.size > 0) {
+        executeBatchFetch();
+      }
+    }
+  })();
+
+  return batchPromise;
+}
+
+// ── Hook ────────────────────────────────────────────────────────────
 
 export function useTicketmasterImage(
   performer: string,
@@ -75,35 +153,46 @@ export function useTicketmasterImage(
 ): { imageUrl: string; isLoading: boolean } {
   const fallback = existingImage || getDefaultCategoryImage(category);
   const cacheKey = performer.toLowerCase().trim();
-  
-  // If we already have a cached Ticketmaster image, use it immediately
+
+  // Synchronous cache check
   const cachedUrl = imageCache.get(cacheKey);
-  
+
   const [imageUrl, setImageUrl] = useState<string>(cachedUrl || fallback);
   const [isLoading, setIsLoading] = useState<boolean>(!cachedUrl);
 
   useEffect(() => {
-    if (cachedUrl) {
-      setImageUrl(cachedUrl);
+    // If already cached, use it
+    if (imageCache.has(cacheKey)) {
+      setImageUrl(imageCache.get(cacheKey)!);
       setIsLoading(false);
       return;
     }
 
     let cancelled = false;
 
-    fetchFromTicketmaster(performer).then((url) => {
-      if (!cancelled && url) {
-        setImageUrl(url);
+    (async () => {
+      // Wait for DB cache to load first
+      await loadDbCache();
+
+      if (cancelled) return;
+
+      // Check again after DB cache loaded
+      if (imageCache.has(cacheKey)) {
+        setImageUrl(imageCache.get(cacheKey)!);
+        setIsLoading(false);
+        return;
       }
+
+      // Schedule batch fetch from Ticketmaster
+      const url = await scheduleBatchFetch(performer);
       if (!cancelled) {
+        if (url) setImageUrl(url);
         setIsLoading(false);
       }
-    });
+    })();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [performer, cachedUrl]);
+    return () => { cancelled = true; };
+  }, [performer, cacheKey]);
 
   return { imageUrl, isLoading };
 }
