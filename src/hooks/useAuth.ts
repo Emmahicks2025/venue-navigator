@@ -73,15 +73,32 @@ export function useAuth() {
     }
   };
 
+  // Store recaptcha verifier to avoid duplicate rendering
+  let recaptchaVerifierInstance: RecaptchaVerifier | null = null;
+
   const sendPhoneVerification = async (phoneNumber: string, recaptchaContainerId: string) => {
     try {
-      const recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainerId, {
+      // Clear previous reCAPTCHA if exists
+      if (recaptchaVerifierInstance) {
+        recaptchaVerifierInstance.clear();
+        recaptchaVerifierInstance = null;
+      }
+      // Clear the container element
+      const container = document.getElementById(recaptchaContainerId);
+      if (container) container.innerHTML = '';
+
+      recaptchaVerifierInstance = new RecaptchaVerifier(auth, recaptchaContainerId, {
         size: 'invisible',
       });
       const provider = new PhoneAuthProvider(auth);
-      const verificationId = await provider.verifyPhoneNumber(phoneNumber, recaptchaVerifier);
+      const verificationId = await provider.verifyPhoneNumber(phoneNumber, recaptchaVerifierInstance);
       return { verificationId, error: null };
     } catch (err: any) {
+      // Clean up on error too
+      if (recaptchaVerifierInstance) {
+        try { recaptchaVerifierInstance.clear(); } catch {}
+        recaptchaVerifierInstance = null;
+      }
       return { verificationId: null, error: { message: err.message || 'Failed to send verification code' } };
     }
   };
