@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, doc, addDoc, onSnapshot, query, orderBy, updateDoc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, addDoc, onSnapshot, query, orderBy, updateDoc, serverTimestamp, setDoc, getDoc, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from './useAuth';
 
@@ -94,6 +94,35 @@ export function useChat() {
     if (user) getOrCreateSession();
   }, [user, getOrCreateSession]);
 
+  const lookupOrder = async (orderNumber: string): Promise<string | null> => {
+    try {
+      const ordersRef = collection(db, 'orders');
+      const q = query(ordersRef, where('order_number', '==', orderNumber));
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      
+      const order = snap.docs[0].data();
+      // Look up tickets for this order
+      const ticketsRef = collection(db, 'tickets');
+      const tq = query(ticketsRef, where('order_id', '==', snap.docs[0].id));
+      const tSnap = await getDocs(tq);
+      const tickets = tSnap.docs.map(d => d.data());
+      
+      let context = `Order #${order.order_number} — Status: ${order.status}, Total: $${order.total}`;
+      if (order.billing_email) context += `, Email: ${order.billing_email}`;
+      if (tickets.length > 0) {
+        context += `\nTickets (${tickets.length}):`;
+        tickets.forEach((t: any) => {
+          context += `\n- ${t.event_name} at ${t.venue_name}, ${t.section_name} Row ${t.row_name} Seat ${t.seat_number} ($${t.price})`;
+        });
+      }
+      return context;
+    } catch (e) {
+      console.error('Order lookup error:', e);
+      return null;
+    }
+  };
+
   const sendMessage = useCallback(async (content: string) => {
     if (!sessionId || !content.trim()) return;
     
@@ -120,6 +149,13 @@ export function useChat() {
           .slice(-10)
           .map(m => ({ role: m.role === 'admin' ? 'assistant' : m.role, content: m.content }));
 
+        // Check if any recent message contains an order number pattern
+        let orderContext: string | null = null;
+        const orderMatch = content.match(/ORD-[A-Z0-9]+/i);
+        if (orderMatch) {
+          orderContext = await lookupOrder(orderMatch[0].toUpperCase());
+        }
+
         const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
         const resp = await fetch(CHAT_URL, {
           method: 'POST',
@@ -127,7 +163,7 @@ export function useChat() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ messages: chatHistory, sessionId }),
+          body: JSON.stringify({ messages: chatHistory, sessionId, orderContext }),
         });
 
         if (!resp.ok) {

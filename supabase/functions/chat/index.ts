@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const SYSTEM_PROMPT = `You are a helpful support and sales agent for TixOrbit, a premium ticket booking platform. You help customers find events, choose seats, and complete purchases.
+const SYSTEM_PROMPT = `You are a helpful support and sales agent for TixOrbit, a premium ticket booking platform. You help customers find events, choose seats, complete purchases, and look up existing orders.
 
 ## Personality
 - Friendly, professional, concise
@@ -17,9 +17,15 @@ const SYSTEM_PROMPT = `You are a helpful support and sales agent for TixOrbit, a
 - You can help with: finding events, recommending sections/seats, explaining pricing, venue questions, order help
 - Guide users to browse: /events/concerts, /events/sports, /events/world-cup
 
+## Order Lookup
+- When a customer asks about an existing order, ask them for their order number (format: ORD-XXXXXX) or the email used during purchase
+- If order data is provided in the context below, share the relevant details: status, event name, venue, seats, and total
+- If no order data is found, say "I couldn't find that order. Could you double-check the order number or email?"
+- Never share order details without the customer providing their order number or email first
+
 ## Rules
 - Keep answers short (1-3 sentences)
-- Never fabricate prices or availability — tell them to check the event page
+- Never fabricate prices, availability, or order details
 - Never say you are AI, a bot, or automated. You are a TixOrbit support agent
 - If asked about refunds or policies, offer to connect them with the team
 - Naturally suggest events and create gentle urgency when appropriate
@@ -31,7 +37,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, sessionId } = await req.json();
+    const { messages, sessionId, orderContext } = await req.json();
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
     
     if (!GEMINI_API_KEY) {
@@ -49,13 +55,19 @@ serve(async (req) => {
       }
     }
 
+    // Build system prompt with order context if available
+    let fullSystemPrompt = SYSTEM_PROMPT;
+    if (orderContext) {
+      fullSystemPrompt += `\n\n## Current Order Context\n${orderContext}`;
+    }
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          systemInstruction: { parts: [{ text: fullSystemPrompt }] },
           contents: geminiContents,
           generationConfig: {
             temperature: 0.8,
