@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Ticket, Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
+import { Logo } from './Logo';
 
 export const Footer = () => {
   return (
@@ -8,12 +9,8 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <Link to="/" className="flex items-center gap-2">
-              <Ticket className="w-7 h-7 text-primary" />
-              <span className="font-display text-xl font-bold">
-                <span className="text-primary">Ticket</span>
-                <span className="text-foreground">Vault</span>
-              </span>
+            <Link to="/">
+              <Logo size="sm" />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Your premium destination for live event tickets. Experience concerts, sports, theater, and more.
@@ -60,7 +57,7 @@ export const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="w-4 h-4 text-primary" />
-                support@ticketvault.com
+                support@tixorbit.com
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="w-4 h-4 text-primary" />
@@ -76,7 +73,7 @@ export const Footer = () => {
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2026 TicketVault. All rights reserved.
+            © 2026 TixOrbit. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link to="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">

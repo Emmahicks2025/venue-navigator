@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Search, ShoppingCart, User, Menu, X, Ticket, Shield, LogOut, Trophy } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, X, Shield, LogOut, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { Logo } from './Logo';
 
 const navLinks = [
   { href: '/events/concerts', label: 'Concerts' },
@@ -25,15 +26,8 @@ export const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="relative">
-              <Ticket className="w-8 h-8 text-primary transition-transform group-hover:scale-110" />
-              <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-            <span className="font-display text-xl lg:text-2xl font-bold tracking-tight">
-              <span className="text-primary">Ticket</span>
-              <span className="text-foreground">Vault</span>
-            </span>
+          <Link to="/">
+            <Logo />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">
