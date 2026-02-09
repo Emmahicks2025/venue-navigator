@@ -24,7 +24,7 @@ const DbEventDetailPage = () => {
   
   // Load SVG map for the venue
   const svgMapName = event?.svg_map_name || event?.venue_name;
-  const { svgContent, sections: svgSections, loading: svgLoading, error: svgError } = useVenueSVG(
+  const { svgContent, sections: svgSections, loading: svgLoading, error: svgError, isFallback } = useVenueSVG(
     svgMapName || undefined
   );
 
@@ -207,12 +207,22 @@ const DbEventDetailPage = () => {
                 </p>
               </div>
             ) : (
-              <InteractiveSVGMap
-                svgContent={svgContent}
-                sections={svgSections}
-                selectedSection={selectedSection}
-                onSectionSelect={setSelectedSection}
-              />
+              <>
+                {isFallback && (
+                  <div className="mb-3 text-center">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-full text-xs text-muted-foreground">
+                      <Info className="w-3.5 h-3.5" />
+                      Generic stadium layout — actual sections may vary
+                    </span>
+                  </div>
+                )}
+                <InteractiveSVGMap
+                  svgContent={svgContent}
+                  sections={svgSections}
+                  selectedSection={selectedSection}
+                  onSectionSelect={setSelectedSection}
+                />
+              </>
             )}
 
             <div className="mt-4 text-center">
