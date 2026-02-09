@@ -265,6 +265,12 @@ const DbEventDetailPage = () => {
               svgSection={selectedSVGSection}
               onTicketsSelected={handleSeatsSelected}
               onClose={handleCloseTickets}
+              matchCategory={{
+                round: event.round,
+                groupName: event.group_name,
+                matchNumber: event.match_number,
+                isWorldCup,
+              }}
             />
           )}
         </SheetContent>

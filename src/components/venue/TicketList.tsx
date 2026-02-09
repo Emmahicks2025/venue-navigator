@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { VenueSection, SelectedSeat } from '@/types';
 import { formatPrice } from '@/data/events';
 import { Button } from '@/components/ui/button';
-import { X, Info, Plus, Minus, ShoppingCart, CreditCard } from 'lucide-react';
+import { X, Info, Plus, Minus, ShoppingCart, CreditCard, Trophy } from 'lucide-react';
 import { SVGSection } from '@/lib/svgParser';
 import { getAvailableTickets } from './InteractiveSVGMap';
 
@@ -21,6 +21,12 @@ interface TicketListProps {
   svgSection: SVGSection;
   onTicketsSelected: (seats: SelectedSeat[], goToCheckout?: boolean) => void;
   onClose: () => void;
+  matchCategory?: {
+    round?: string | null;
+    groupName?: string | null;
+    matchNumber?: number | null;
+    isWorldCup?: boolean;
+  };
 }
 
 // Generate consecutive seat numbers starting from a random position
@@ -64,7 +70,7 @@ const generateTicketOptions = (section: VenueSection, svgSection: SVGSection): T
   return sorted;
 };
 
-export const TicketList = ({ section, svgSection, onTicketsSelected, onClose }: TicketListProps) => {
+export const TicketList = ({ section, svgSection, onTicketsSelected, onClose, matchCategory }: TicketListProps) => {
   // Per-row quantity state
   const [rowQuantities, setRowQuantities] = useState<Record<string, number>>({});
   
@@ -116,6 +122,37 @@ export const TicketList = ({ section, svgSection, onTicketsSelected, onClose }: 
         <span className="text-accent text-sm">🔥</span>
         <span className="text-xs text-accent font-medium">Tickets selling fast!</span>
       </div>
+
+      {/* FIFA World Cup Category Badge */}
+      {matchCategory?.isWorldCup && matchCategory.round && (
+        <div className="px-5 py-2.5 bg-gradient-to-r from-[#02B906]/15 via-[#02B906]/10 to-[#FFDB00]/15 border-b border-[#02B906]/20">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-[#FFDB00] to-[#FFB800] shadow-sm">
+              <Trophy className="w-3.5 h-3.5 text-black" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#02B906]">
+                FIFA World Cup 2026™
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold text-foreground">
+                  {matchCategory.round}
+                </span>
+                {matchCategory.groupName && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-[#02B906] text-white">
+                    Group {matchCategory.groupName}
+                  </span>
+                )}
+                {matchCategory.matchNumber && (
+                  <span className="text-xs text-muted-foreground">
+                    · Match {matchCategory.matchNumber}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Ticket List - Scrollable */}
       <div className="flex-1 overflow-y-auto">
