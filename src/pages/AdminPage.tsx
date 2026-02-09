@@ -6,7 +6,8 @@ import { EventsManager } from '@/components/admin/EventsManager';
 import { VenueMapsManager } from '@/components/admin/VenueMapsManager';
 import { BulkUploadMaps } from '@/components/admin/BulkUploadMaps';
 import { FifaEventsManager } from '@/components/admin/FifaEventsManager';
-import { Calendar, Map, Loader2, ShieldAlert, Trophy } from 'lucide-react';
+import { LiveChatManager } from '@/components/admin/LiveChatManager';
+import { Calendar, Map, Loader2, ShieldAlert, Trophy, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const AdminPage = () => {
@@ -52,7 +53,7 @@ const AdminPage = () => {
         </div>
 
         <Tabs defaultValue="events" className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger value="events" className="gap-2">
               <Calendar className="w-4 h-4" />
               Events
@@ -64,6 +65,10 @@ const AdminPage = () => {
             <TabsTrigger value="venues" className="gap-2">
               <Map className="w-4 h-4" />
               Venue Maps
+            </TabsTrigger>
+            <TabsTrigger value="live-chat" className="gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Live Chat
             </TabsTrigger>
           </TabsList>
 
@@ -80,6 +85,10 @@ const AdminPage = () => {
               <BulkUploadMaps />
               <VenueMapsManager />
             </div>
+          </TabsContent>
+
+          <TabsContent value="live-chat">
+            <LiveChatManager />
           </TabsContent>
         </Tabs>
       </div>
