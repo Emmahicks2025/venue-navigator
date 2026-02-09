@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useAuth } from './useAuth';
 
 export interface OrderRow {
@@ -52,14 +53,13 @@ export function useUserOrders() {
     queryKey: ['user-orders', user?.uid],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.uid)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as OrderRow[];
+      const q = query(
+        collection(db, 'orders'),
+        where('user_id', '==', user.uid),
+        orderBy('created_at', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as OrderRow));
     },
     enabled: !!user,
   });
@@ -72,32 +72,31 @@ export function useUserTickets() {
     queryKey: ['user-tickets', user?.uid],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from('tickets')
-        .select('*')
-        .eq('user_id', user.uid)
-        .order('event_date', { ascending: true });
+      const q = query(
+        collection(db, 'tickets'),
+        where('user_id', '==', user.uid),
+        orderBy('event_date', 'asc')
+      );
+      const snapshot = await getDocs(q);
+      const tickets = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TicketRow));
 
-      if (error) throw error;
-      const tickets = data as TicketRow[];
-
-      // Enrich tickets missing performer_image from performer_images table
+      // Enrich tickets missing performer_image from performer_images collection
       const missingImage = tickets.filter((t) => !t.performer_image && t.performer);
       if (missingImage.length > 0) {
         const performerNames = [...new Set(missingImage.map((t) => t.performer!))];
-        const { data: images } = await supabase
-          .from('performer_images')
-          .select('performer_name, image_url')
-          .in('performer_name', performerNames);
-
-        if (images && images.length > 0) {
-          const imageMap = new Map(images.map((img) => [img.performer_name, img.image_url]));
-          tickets.forEach((t) => {
-            if (!t.performer_image && t.performer && imageMap.has(t.performer)) {
-              t.performer_image = imageMap.get(t.performer)!;
-            }
-          });
-        }
+        const imgQuery = query(
+          collection(db, 'performer_images'),
+          where('performer_name', 'in', performerNames.slice(0, 30)) // Firestore 'in' limit is 30
+        );
+        const imgSnapshot = await getDocs(imgQuery);
+        const imageMap = new Map(
+          imgSnapshot.docs.map((d) => [d.data().performer_name, d.data().image_url])
+        );
+        tickets.forEach((t) => {
+          if (!t.performer_image && t.performer && imageMap.has(t.performer)) {
+            t.performer_image = imageMap.get(t.performer)!;
+          }
+        });
       }
 
       return tickets;
@@ -113,14 +112,13 @@ export function useUserTransfers() {
     queryKey: ['user-transfers', user?.uid],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from('ticket_transfers')
-        .select('*')
-        .eq('from_user_id', user.uid)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as TransferRow[];
+      const q = query(
+        collection(db, 'ticket_transfers'),
+        where('from_user_id', '==', user.uid),
+        orderBy('created_at', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TransferRow));
     },
     enabled: !!user,
   });

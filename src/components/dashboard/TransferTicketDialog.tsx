@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/integrations/supabase/client';
+import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 import { TicketRow } from '@/hooks/useOrders';
 import { toast } from 'sonner';
@@ -46,28 +47,24 @@ export const TransferTicketDialog = ({
 
     setIsSubmitting(true);
     try {
-      // Create transfer record
-      const { error: transferError } = await supabase
-        .from('ticket_transfers')
-        .insert({
-          ticket_id: ticket.id,
-          from_user_id: user.uid,
-          to_email: recipientEmail.trim(),
-          message: message.trim() || null,
-          status: 'pending',
-        });
-
-      if (transferError) throw transferError;
+      // Create transfer record in Firestore
+      await addDoc(collection(db, 'ticket_transfers'), {
+        ticket_id: ticket.id,
+        from_user_id: user.uid,
+        to_email: recipientEmail.trim(),
+        message: message.trim() || null,
+        status: 'pending',
+        to_user_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
       // Update ticket status
-      const { error: ticketError } = await supabase
-        .from('tickets')
-        .update({ status: 'transferred' })
-        .eq('id', ticket.id);
+      await updateDoc(doc(db, 'tickets', ticket.id), {
+        status: 'transferred',
+        updated_at: new Date().toISOString(),
+      });
 
-      if (ticketError) throw ticketError;
-
-      // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['user-tickets'] });
       queryClient.invalidateQueries({ queryKey: ['user-transfers'] });
 

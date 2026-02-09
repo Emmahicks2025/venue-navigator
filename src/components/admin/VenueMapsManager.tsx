@@ -1,13 +1,13 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { collection, query, orderBy, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Upload, Pencil, Trash2, Map, Eye, FileCode } from 'lucide-react';
+import { Upload, Pencil, Trash2, FileCode } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseSVGSections, SVGSection } from '@/lib/svgParser';
 
@@ -33,19 +33,15 @@ export function VenueMapsManager() {
   const { data: venueMaps, isLoading } = useQuery({
     queryKey: ['venue-maps'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('venue_maps')
-        .select('*')
-        .order('venue_name');
-      if (error) throw error;
-      return data as VenueMap[];
+      const q = query(collection(db, 'venue_maps'), orderBy('venue_name'));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as VenueMap));
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('venue_maps').delete().eq('id', id);
-      if (error) throw error;
+      await deleteDoc(doc(db, 'venue_maps', id));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venue-maps'] });
@@ -110,7 +106,6 @@ export function VenueMapsManager() {
         )}
       </CardContent>
 
-      {/* SVG Editor Dialog */}
       <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -132,15 +127,7 @@ export function VenueMapsManager() {
   );
 }
 
-function VenueMapCard({ 
-  venueMap, 
-  onEdit, 
-  onDelete 
-}: { 
-  venueMap: VenueMap; 
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
+function VenueMapCard({ venueMap, onEdit, onDelete }: { venueMap: VenueMap; onEdit: () => void; onDelete: () => void }) {
   const sections = parseSVGSections(venueMap.svg_content);
   
   return (
@@ -153,32 +140,20 @@ function VenueMapCard({
           </p>
         </div>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={onEdit}>
-            <Pencil className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onDelete}>
-            <Trash2 className="w-4 h-4 text-destructive" />
-          </Button>
+          <Button variant="ghost" size="icon" onClick={onEdit}><Pencil className="w-4 h-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={onDelete}><Trash2 className="w-4 h-4 text-destructive" /></Button>
         </div>
       </div>
       
       <div 
         className="aspect-video bg-muted rounded-lg overflow-hidden mb-3 flex items-center justify-center"
         dangerouslySetInnerHTML={{ __html: venueMap.svg_content }}
-        style={{ 
-          maxHeight: '150px',
-        }}
+        style={{ maxHeight: '150px' }}
       />
 
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">
-          {sections.length} sections
-        </span>
-        {venueMap.capacity && (
-          <span className="text-muted-foreground">
-            Capacity: {venueMap.capacity.toLocaleString()}
-          </span>
-        )}
+        <span className="text-muted-foreground">{sections.length} sections</span>
+        {venueMap.capacity && <span className="text-muted-foreground">Capacity: {venueMap.capacity.toLocaleString()}</span>}
       </div>
     </div>
   );
@@ -205,8 +180,6 @@ function UploadForm({ onSuccess }: { onSuccess: () => void }) {
       reader.onload = (event) => {
         const content = event.target?.result as string;
         setFormData({ ...formData, svg_content: content });
-        
-        // Try to extract venue name from filename
         const nameMatch = file.name.replace('.svg', '').replace(/_/g, ' ');
         if (!formData.venue_name) {
           setFormData(prev => ({ ...prev, svg_content: content, venue_name: nameMatch }));
@@ -220,18 +193,17 @@ function UploadForm({ onSuccess }: { onSuccess: () => void }) {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from('venue_maps')
-        .insert({
-          venue_name: formData.venue_name,
-          svg_content: formData.svg_content,
-          venue_city: formData.venue_city || null,
-          venue_state: formData.venue_state || null,
-          venue_country: formData.venue_country || 'USA',
-          capacity: formData.capacity ? parseInt(formData.capacity) : null,
-          venue_type: formData.venue_type || 'stadium',
-        });
-      if (error) throw error;
+      await addDoc(collection(db, 'venue_maps'), {
+        venue_name: formData.venue_name,
+        svg_content: formData.svg_content,
+        venue_city: formData.venue_city || null,
+        venue_state: formData.venue_state || null,
+        venue_country: formData.venue_country || 'USA',
+        capacity: formData.capacity ? parseInt(formData.capacity) : null,
+        venue_type: formData.venue_type || 'stadium',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
     },
     onSuccess: () => {
       toast.success('Venue map uploaded successfully');
@@ -243,90 +215,28 @@ function UploadForm({ onSuccess }: { onSuccess: () => void }) {
   });
 
   return (
-    <form 
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!formData.svg_content) {
-          toast.error('Please select an SVG file');
-          return;
-        }
-        saveMutation.mutate();
-      }}
-      className="space-y-4"
-    >
+    <form onSubmit={(e) => { e.preventDefault(); if (!formData.svg_content) { toast.error('Please select an SVG file'); return; } saveMutation.mutate(); }} className="space-y-4">
       <div className="space-y-2">
         <Label>SVG File *</Label>
-        <div 
-          className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".svg,image/svg+xml"
-            onChange={handleFileChange}
-            className="hidden"
-          />
+        <div className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => fileInputRef.current?.click()}>
+          <input ref={fileInputRef} type="file" accept=".svg,image/svg+xml" onChange={handleFileChange} className="hidden" />
           {fileName ? (
-            <div className="flex items-center justify-center gap-2 text-sm">
-              <FileCode className="w-5 h-5 text-primary" />
-              <span>{fileName}</span>
-            </div>
+            <div className="flex items-center justify-center gap-2 text-sm"><FileCode className="w-5 h-5 text-primary" /><span>{fileName}</span></div>
           ) : (
-            <div className="text-muted-foreground">
-              <Upload className="w-8 h-8 mx-auto mb-2" />
-              <p>Click to select an SVG file</p>
-            </div>
+            <div className="text-muted-foreground"><Upload className="w-8 h-8 mx-auto mb-2" /><p>Click to select an SVG file</p></div>
           )}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="venue_name">Venue Name *</Label>
-          <Input
-            id="venue_name"
-            value={formData.venue_name}
-            onChange={(e) => setFormData({ ...formData, venue_name: e.target.value })}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="capacity">Capacity</Label>
-          <Input
-            id="capacity"
-            type="number"
-            value={formData.capacity}
-            onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-          />
-        </div>
+        <div className="space-y-2"><Label htmlFor="venue_name">Venue Name *</Label><Input id="venue_name" value={formData.venue_name} onChange={(e) => setFormData({ ...formData, venue_name: e.target.value })} required /></div>
+        <div className="space-y-2"><Label htmlFor="capacity">Capacity</Label><Input id="capacity" type="number" value={formData.capacity} onChange={(e) => setFormData({ ...formData, capacity: e.target.value })} /></div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="venue_city">City</Label>
-          <Input
-            id="venue_city"
-            value={formData.venue_city}
-            onChange={(e) => setFormData({ ...formData, venue_city: e.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="venue_state">State</Label>
-          <Input
-            id="venue_state"
-            value={formData.venue_state}
-            onChange={(e) => setFormData({ ...formData, venue_state: e.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="venue_country">Country</Label>
-          <Input
-            id="venue_country"
-            value={formData.venue_country}
-            onChange={(e) => setFormData({ ...formData, venue_country: e.target.value })}
-          />
-        </div>
+        <div className="space-y-2"><Label htmlFor="venue_city">City</Label><Input id="venue_city" value={formData.venue_city} onChange={(e) => setFormData({ ...formData, venue_city: e.target.value })} /></div>
+        <div className="space-y-2"><Label htmlFor="venue_state">State</Label><Input id="venue_state" value={formData.venue_state} onChange={(e) => setFormData({ ...formData, venue_state: e.target.value })} /></div>
+        <div className="space-y-2"><Label htmlFor="venue_country">Country</Label><Input id="venue_country" value={formData.venue_country} onChange={(e) => setFormData({ ...formData, venue_country: e.target.value })} /></div>
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
@@ -344,11 +254,9 @@ function SVGEditor({ venueMap, onSuccess }: { venueMap: VenueMap; onSuccess: () 
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      // Update the SVG content with the new section data
       let updatedSvg = svgContent;
       
       sections.forEach(section => {
-        // Update data attributes in the SVG
         const sectionRegex = new RegExp(`(<g[^>]*data-section-id="${section.id}"[^>]*)`, 'g');
         updatedSvg = updatedSvg.replace(sectionRegex, (match) => {
           return match
@@ -361,11 +269,10 @@ function SVGEditor({ venueMap, onSuccess }: { venueMap: VenueMap; onSuccess: () 
         });
       });
 
-      const { error } = await supabase
-        .from('venue_maps')
-        .update({ svg_content: updatedSvg })
-        .eq('id', venueMap.id);
-      if (error) throw error;
+      await updateDoc(doc(db, 'venue_maps', venueMap.id), {
+        svg_content: updatedSvg,
+        updated_at: new Date().toISOString(),
+      });
     },
     onSuccess: () => {
       toast.success('SVG map updated successfully');
@@ -384,25 +291,16 @@ function SVGEditor({ venueMap, onSuccess }: { venueMap: VenueMap; onSuccess: () 
 
   return (
     <div className="space-y-6">
-      {/* SVG Preview */}
       <div className="border rounded-lg p-4 bg-muted/30">
         <h3 className="font-medium mb-3">Map Preview</h3>
-        <div 
-          className="aspect-video bg-background rounded-lg overflow-hidden flex items-center justify-center"
-          dangerouslySetInnerHTML={{ __html: svgContent }}
-          style={{ maxHeight: '300px' }}
-        />
+        <div className="aspect-video bg-background rounded-lg overflow-hidden flex items-center justify-center" dangerouslySetInnerHTML={{ __html: svgContent }} style={{ maxHeight: '300px' }} />
       </div>
 
-      {/* Sections Editor */}
       <div className="space-y-4">
         <h3 className="font-medium">Section Data ({sections.length} sections)</h3>
         
         {sections.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            No sections with data attributes found in this SVG. 
-            Make sure sections have data-section-id attributes.
-          </p>
+          <p className="text-muted-foreground text-sm">No sections with data attributes found in this SVG.</p>
         ) : (
           <div className="max-h-[400px] overflow-y-auto space-y-3">
             {sections.map((section, index) => (
@@ -412,72 +310,15 @@ function SVGEditor({ venueMap, onSuccess }: { venueMap: VenueMap; onSuccess: () 
                   <span className="text-xs text-muted-foreground">ID: {section.id}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Rows</Label>
-                    <Input
-                      type="number"
-                      value={section.rows}
-                      onChange={(e) => updateSection(index, 'rows', parseInt(e.target.value) || 0)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Seats/Row</Label>
-                    <Input
-                      type="number"
-                      value={section.seatsPerRow}
-                      onChange={(e) => updateSection(index, 'seatsPerRow', parseInt(e.target.value) || 0)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Total Seats</Label>
-                    <Input
-                      type="number"
-                      value={section.totalSeats}
-                      onChange={(e) => updateSection(index, 'totalSeats', parseInt(e.target.value) || 0)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Min Price</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={section.priceMin}
-                      onChange={(e) => updateSection(index, 'priceMin', parseFloat(e.target.value) || 0)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Max Price</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={section.priceMax}
-                      onChange={(e) => updateSection(index, 'priceMax', parseFloat(e.target.value) || 0)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Current Price</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={section.currentPrice}
-                      onChange={(e) => updateSection(index, 'currentPrice', parseFloat(e.target.value) || 0)}
-                      className="h-8 text-sm"
-                    />
-                  </div>
+                  <div className="space-y-1"><Label className="text-xs">Rows</Label><Input type="number" value={section.rows} onChange={(e) => updateSection(index, 'rows', parseInt(e.target.value) || 0)} className="h-8 text-sm" /></div>
+                  <div className="space-y-1"><Label className="text-xs">Seats/Row</Label><Input type="number" value={section.seatsPerRow} onChange={(e) => updateSection(index, 'seatsPerRow', parseInt(e.target.value) || 0)} className="h-8 text-sm" /></div>
+                  <div className="space-y-1"><Label className="text-xs">Total Seats</Label><Input type="number" value={section.totalSeats} onChange={(e) => updateSection(index, 'totalSeats', parseInt(e.target.value) || 0)} className="h-8 text-sm" /></div>
+                  <div className="space-y-1"><Label className="text-xs">Min Price</Label><Input type="number" step="0.01" value={section.priceMin} onChange={(e) => updateSection(index, 'priceMin', parseFloat(e.target.value) || 0)} className="h-8 text-sm" /></div>
+                  <div className="space-y-1"><Label className="text-xs">Max Price</Label><Input type="number" step="0.01" value={section.priceMax} onChange={(e) => updateSection(index, 'priceMax', parseFloat(e.target.value) || 0)} className="h-8 text-sm" /></div>
+                  <div className="space-y-1"><Label className="text-xs">Current Price</Label><Input type="number" step="0.01" value={section.currentPrice} onChange={(e) => updateSection(index, 'currentPrice', parseFloat(e.target.value) || 0)} className="h-8 text-sm" /></div>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`available-${section.id}`}
-                    checked={section.available}
-                    onChange={(e) => updateSection(index, 'available', e.target.checked)}
-                    className="rounded"
-                  />
+                  <input type="checkbox" id={`available-${section.id}`} checked={section.available} onChange={(e) => updateSection(index, 'available', e.target.checked)} className="rounded" />
                   <Label htmlFor={`available-${section.id}`} className="text-sm">Available</Label>
                 </div>
               </div>

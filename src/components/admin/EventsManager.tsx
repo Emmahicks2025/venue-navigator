@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { collection, query, orderBy, limit, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { venueNames } from '@/data/venues';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,25 +52,27 @@ export function EventsManager() {
   const { data: events, isLoading } = useQuery({
     queryKey: ['admin-events', searchQuery],
     queryFn: async () => {
-      let query = supabase
-        .from('events')
-        .select('*')
-        .order('date', { ascending: true });
+      const q = query(collection(db, 'events'), orderBy('date', 'asc'), limit(100));
+      const snapshot = await getDocs(q);
+      let results = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Event));
 
       if (searchQuery) {
-        query = query.or(`name.ilike.%${searchQuery}%,venue_name.ilike.%${searchQuery}%,performer.ilike.%${searchQuery}%`);
+        const lower = searchQuery.toLowerCase();
+        results = results.filter(
+          (e) =>
+            e.name.toLowerCase().includes(lower) ||
+            e.venue_name.toLowerCase().includes(lower) ||
+            e.performer.toLowerCase().includes(lower)
+        );
       }
 
-      const { data, error } = await query.limit(100);
-      if (error) throw error;
-      return data as Event[];
+      return results;
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('events').delete().eq('id', id);
-      if (error) throw error;
+      await deleteDoc(doc(db, 'events', id));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-events'] });
@@ -120,7 +123,7 @@ export function EventsManager() {
           <div className="text-center py-8 text-muted-foreground">Loading events...</div>
         ) : events?.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No events found. Click "Add Event" or "Seed World Cup Data" to get started.
+            No events found. Click "Add Event" to get started.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -248,8 +251,6 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
   });
 
   const [svgMapOpen, setSvgMapOpen] = useState(false);
-
-  // Use local venue names (SVG files in public/venue-maps/) as the source
   const venueMaps = useMemo(() => [...venueNames].sort(), []);
 
   const saveMutation = useMutation({
@@ -265,19 +266,16 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
         group_name: formData.group_name || null,
         home_team: formData.home_team || null,
         away_team: formData.away_team || null,
+        updated_at: new Date().toISOString(),
       };
 
       if (event?.id) {
-        const { error } = await supabase
-          .from('events')
-          .update(eventData)
-          .eq('id', event.id);
-        if (error) throw error;
+        await updateDoc(doc(db, 'events', event.id), eventData);
       } else {
-        const { error } = await supabase
-          .from('events')
-          .insert(eventData);
-        if (error) throw error;
+        await addDoc(collection(db, 'events'), {
+          ...eventData,
+          created_at: new Date().toISOString(),
+        });
       }
     },
     onSuccess: () => {
@@ -300,34 +298,19 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="name">Event Name *</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
+          <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="performer">Performer / Teams *</Label>
-          <Input
-            id="performer"
-            value={formData.performer}
-            onChange={(e) => setFormData({ ...formData, performer: e.target.value })}
-            required
-          />
+          <Input id="performer" value={formData.performer} onChange={(e) => setFormData({ ...formData, performer: e.target.value })} required />
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="category">Category *</Label>
-          <Select 
-            value={formData.category} 
-            onValueChange={(value) => setFormData({ ...formData, category: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
+          <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="sports">Sports</SelectItem>
               <SelectItem value="concerts">Concerts</SelectItem>
@@ -339,86 +322,43 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
         </div>
         <div className="space-y-2">
           <Label htmlFor="date">Date *</Label>
-          <Input
-            id="date"
-            type="date"
-            value={formData.date}
-            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-            required
-          />
+          <Input id="date" type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="time">Time *</Label>
-          <Input
-            id="time"
-            type="time"
-            value={formData.time}
-            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-            required
-          />
+          <Input id="time" type="time" value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} required />
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="venue_name">Venue Name *</Label>
-          <Input
-            id="venue_name"
-            value={formData.venue_name}
-            onChange={(e) => setFormData({ ...formData, venue_name: e.target.value })}
-            required
-          />
+          <Input id="venue_name" value={formData.venue_name} onChange={(e) => setFormData({ ...formData, venue_name: e.target.value })} required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="venue_city">City *</Label>
-          <Input
-            id="venue_city"
-            value={formData.venue_city}
-            onChange={(e) => setFormData({ ...formData, venue_city: e.target.value })}
-            required
-          />
+          <Input id="venue_city" value={formData.venue_city} onChange={(e) => setFormData({ ...formData, venue_city: e.target.value })} required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="venue_state">State</Label>
-          <Input
-            id="venue_state"
-            value={formData.venue_state}
-            onChange={(e) => setFormData({ ...formData, venue_state: e.target.value })}
-          />
+          <Input id="venue_state" value={formData.venue_state} onChange={(e) => setFormData({ ...formData, venue_state: e.target.value })} />
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="min_price">Min Price ($)</Label>
-          <Input
-            id="min_price"
-            type="number"
-            step="0.01"
-            value={formData.min_price}
-            onChange={(e) => setFormData({ ...formData, min_price: parseFloat(e.target.value) || 0 })}
-          />
+          <Input id="min_price" type="number" step="0.01" value={formData.min_price} onChange={(e) => setFormData({ ...formData, min_price: parseFloat(e.target.value) || 0 })} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="max_price">Max Price ($)</Label>
-          <Input
-            id="max_price"
-            type="number"
-            step="0.01"
-            value={formData.max_price}
-            onChange={(e) => setFormData({ ...formData, max_price: parseFloat(e.target.value) || 0 })}
-          />
+          <Input id="max_price" type="number" step="0.01" value={formData.max_price} onChange={(e) => setFormData({ ...formData, max_price: parseFloat(e.target.value) || 0 })} />
         </div>
         <div className="space-y-2">
           <Label>SVG Map Name</Label>
           <Popover open={svgMapOpen} onOpenChange={setSvgMapOpen}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={svgMapOpen}
-                className="w-full justify-between font-normal"
-              >
+              <Button variant="outline" role="combobox" aria-expanded={svgMapOpen} className="w-full justify-between font-normal">
                 {formData.svg_map_name || "Select venue map..."}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -429,25 +369,12 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
                 <CommandList>
                   <CommandEmpty>No venue map found.</CommandEmpty>
                   <CommandGroup>
-                    <CommandItem
-                      value="__none__"
-                      onSelect={() => {
-                        setFormData({ ...formData, svg_map_name: '' });
-                        setSvgMapOpen(false);
-                      }}
-                    >
+                    <CommandItem value="__none__" onSelect={() => { setFormData({ ...formData, svg_map_name: '' }); setSvgMapOpen(false); }}>
                       <Check className={cn("mr-2 h-4 w-4", !formData.svg_map_name ? "opacity-100" : "opacity-0")} />
                       None
                     </CommandItem>
                     {venueMaps?.map((name) => (
-                      <CommandItem
-                        key={name}
-                        value={name}
-                        onSelect={() => {
-                          setFormData({ ...formData, svg_map_name: name });
-                          setSvgMapOpen(false);
-                        }}
-                      >
+                      <CommandItem key={name} value={name} onSelect={() => { setFormData({ ...formData, svg_map_name: name }); setSvgMapOpen(false); }}>
                         <Check className={cn("mr-2 h-4 w-4", formData.svg_map_name === name ? "opacity-100" : "opacity-0")} />
                         {name}
                       </CommandItem>
@@ -463,84 +390,43 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="ticket_url">Ticket URL</Label>
-          <Input
-            id="ticket_url"
-            type="url"
-            value={formData.ticket_url}
-            onChange={(e) => setFormData({ ...formData, ticket_url: e.target.value })}
-            placeholder="https://..."
-          />
+          <Input id="ticket_url" type="url" value={formData.ticket_url} onChange={(e) => setFormData({ ...formData, ticket_url: e.target.value })} placeholder="https://..." />
         </div>
         <div className="space-y-2">
           <Label htmlFor="performer_image">Performer Image URL</Label>
-          <Input
-            id="performer_image"
-            type="url"
-            value={formData.performer_image}
-            onChange={(e) => setFormData({ ...formData, performer_image: e.target.value })}
-            placeholder="https://..."
-          />
+          <Input id="performer_image" type="url" value={formData.performer_image} onChange={(e) => setFormData({ ...formData, performer_image: e.target.value })} placeholder="https://..." />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="source">Source</Label>
-          <Input
-            id="source"
-            value={formData.source}
-            onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-            placeholder="e.g., ticketmaster, manual"
-          />
+          <Input id="source" value={formData.source} onChange={(e) => setFormData({ ...formData, source: e.target.value })} placeholder="e.g., ticketmaster, manual" />
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="home_team">Home Team</Label>
-          <Input
-            id="home_team"
-            value={formData.home_team}
-            onChange={(e) => setFormData({ ...formData, home_team: e.target.value })}
-          />
+          <Input id="home_team" value={formData.home_team} onChange={(e) => setFormData({ ...formData, home_team: e.target.value })} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="away_team">Away Team</Label>
-          <Input
-            id="away_team"
-            value={formData.away_team}
-            onChange={(e) => setFormData({ ...formData, away_team: e.target.value })}
-          />
+          <Input id="away_team" value={formData.away_team} onChange={(e) => setFormData({ ...formData, away_team: e.target.value })} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="round">Round</Label>
-          <Input
-            id="round"
-            value={formData.round}
-            onChange={(e) => setFormData({ ...formData, round: e.target.value })}
-            placeholder="e.g., Group Stage, Final"
-          />
+          <Input id="round" value={formData.round} onChange={(e) => setFormData({ ...formData, round: e.target.value })} placeholder="e.g., Group Stage, Final" />
         </div>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          rows={3}
-        />
+        <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
       </div>
 
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="is_featured"
-          checked={formData.is_featured}
-          onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
-          className="rounded"
-        />
+        <input type="checkbox" id="is_featured" checked={formData.is_featured} onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })} className="rounded" />
         <Label htmlFor="is_featured">Featured Event</Label>
       </div>
 
