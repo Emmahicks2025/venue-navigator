@@ -49,13 +49,13 @@ export function useUserOrders() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['user-orders', user?.id],
+    queryKey: ['user-orders', user?.uid],
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
         .from('orders')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.uid)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -69,13 +69,13 @@ export function useUserTickets() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['user-tickets', user?.id],
+    queryKey: ['user-tickets', user?.uid],
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
         .from('tickets')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.uid)
         .order('event_date', { ascending: true });
 
       if (error) throw error;
@@ -110,13 +110,13 @@ export function useUserTransfers() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['user-transfers', user?.id],
+    queryKey: ['user-transfers', user?.uid],
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
         .from('ticket_transfers')
         .select('*')
-        .eq('from_user_id', user.id)
+        .eq('from_user_id', user.uid)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

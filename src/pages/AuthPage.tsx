@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2, LogIn, UserPlus, Ticket } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -59,25 +58,14 @@ const AuthPage = () => {
         }
         toast.success('Signed in successfully!');
       } else {
-        const { error } = await signUp(email, password);
+        const { error } = await signUp(email, password, { firstName, lastName });
         if (error) {
-          if (error.message.includes('already registered')) {
+          if (error.message.includes('already-in-use')) {
             toast.error('This email is already registered. Try signing in.');
           } else {
             toast.error(error.message);
           }
           return;
-        }
-
-        // Update profile with name after signup
-        // Wait briefly for the trigger to create the profile row
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const { data: { user: newUser } } = await supabase.auth.getUser();
-        if (newUser) {
-          await supabase
-            .from('profiles')
-            .update({ first_name: firstName, last_name: lastName })
-            .eq('user_id', newUser.id);
         }
 
         toast.success('Account created! You can now sign in.');

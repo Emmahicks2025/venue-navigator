@@ -14,13 +14,13 @@ export function useUserProfile() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['user-profile', user?.id],
+    queryKey: ['user-profile', user?.uid],
     queryFn: async () => {
       if (!user) return null;
       const { data, error } = await supabase
         .from('profiles')
         .select('id, user_id, email, first_name, last_name')
-        .eq('user_id', user.id)
+        .eq('user_id', user.uid)
         .single();
 
       if (error) throw error;

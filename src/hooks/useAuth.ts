@@ -1,77 +1,79 @@
 import { useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  User,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Set up listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-
-        // Defer role check
-        if (session?.user) {
-          setTimeout(() => {
-            checkAdminRole(session.user.id);
-          }, 0);
-        } else {
-          setIsAdmin(false);
-        }
-      }
-    );
-
-    // THEN check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
       setLoading(false);
 
-      if (session?.user) {
-        checkAdminRole(session.user.id);
+      if (firebaseUser) {
+        checkAdminRole(firebaseUser.uid);
+      } else {
+        setIsAdmin(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   const checkAdminRole = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .eq('role', 'admin')
-      .maybeSingle();
-    
-    setIsAdmin(!!data);
+    try {
+      const roleDoc = await getDoc(doc(db, 'user_roles', userId));
+      setIsAdmin(roleDoc.exists() && roleDoc.data()?.role === 'admin');
+    } catch {
+      setIsAdmin(false);
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      return { error: null };
+    } catch (err: any) {
+      return { error: { message: err.message || 'Sign in failed' } };
+    }
   };
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-      },
-    });
-    return { error };
+  const signUp = async (email: string, password: string, profile?: { firstName: string; lastName: string }) => {
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      // Create profile document in Firestore
+      if (profile) {
+        await setDoc(doc(db, 'profiles', cred.user.uid), {
+          user_id: cred.user.uid,
+          email,
+          first_name: profile.firstName,
+          last_name: profile.lastName,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }
+      return { error: null };
+    } catch (err: any) {
+      return { error: { message: err.message || 'Sign up failed' } };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await firebaseSignOut(auth);
     setIsAdmin(false);
   };
+
+  // Expose session-like object for compatibility (user?.id pattern)
+  const session = user ? { user } : null;
 
   return { user, session, loading, isAdmin, signIn, signUp, signOut };
 }

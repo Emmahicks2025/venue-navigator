@@ -51,7 +51,7 @@ export const TransferTicketDialog = ({
         .from('ticket_transfers')
         .insert({
           ticket_id: ticket.id,
-          from_user_id: user.id,
+          from_user_id: user.uid,
           to_email: recipientEmail.trim(),
           message: message.trim() || null,
           status: 'pending',
