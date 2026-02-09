@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, Lock, Check, ChevronLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -16,6 +16,7 @@ const CheckoutPage = () => {
   const { items, getTotalPrice, clearCart } = useCart();
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
+  const submittingRef = useRef(false);
   const [formData, setFormData] = useState({
     email: user?.email || '',
     firstName: '',
@@ -44,6 +45,8 @@ const CheckoutPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setIsProcessing(true);
 
     try {
@@ -108,6 +111,7 @@ const CheckoutPage = () => {
       toast.error(err.message || 'Payment failed. Please try again.');
     } finally {
       setIsProcessing(false);
+      submittingRef.current = false;
     }
   };
 
