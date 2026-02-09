@@ -16,6 +16,10 @@ import { formatPrice } from '@/data/events';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useFeaturedDbEvents, useDbEventsByCategory, useDbEventsByCity, useDbCategoryCounts, mapDbEventToFrontend } from '@/hooks/useDbEvents';
 import heroImage from '@/assets/hero-stadium.jpg';
+import categoryConcerts from '@/assets/category-concerts.jpg';
+import categorySports from '@/assets/category-sports.jpg';
+import categoryTheater from '@/assets/category-theater.jpg';
+import categoryComedy from '@/assets/category-comedy.jpg';
 
 const Index = () => {
   const heroRef = useRef<HTMLElement>(null);
@@ -203,21 +207,24 @@ const Index = () => {
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { name: 'Concerts', icon: '🎵', category: 'concerts', color: 'from-blue-600 to-purple-600', href: '/events/concerts' },
-              { name: 'Sports', icon: '🏀', category: 'sports', color: 'from-green-600 to-emerald-600', href: '/events/sports' },
-              { name: 'Theater', icon: '🎭', category: 'theater', color: 'from-pink-600 to-rose-600', href: '/events/theater' },
-              { name: 'Comedy', icon: '😂', category: 'comedy', color: 'from-yellow-600 to-orange-600', href: '/events/comedy' },
+              { name: 'Concerts', image: categoryConcerts, href: '/events/concerts' },
+              { name: 'Sports', image: categorySports, href: '/events/sports' },
+              { name: 'Theater', image: categoryTheater, href: '/events/theater' },
+              { name: 'Comedy', image: categoryComedy, href: '/events/comedy' },
             ].map((cat) => (
               <Link
                 key={cat.name}
                 to={cat.href}
-                className="group relative overflow-hidden rounded-2xl p-6 lg:p-8 card-hover"
+                className="group relative overflow-hidden rounded-2xl aspect-[4/3] card-hover"
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
-                <div className="relative z-10">
-                  <span className="text-4xl lg:text-5xl mb-4 block">{cat.icon}</span>
-                  <h3 className="font-display text-xl lg:text-2xl font-bold text-white mb-1">{cat.name}</h3>
-                  <p className="text-white/70 text-sm">{getCategoryCount(cat.category)} events</p>
+                <img
+                  src={cat.image}
+                  alt={cat.name}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-5 lg:p-6">
+                  <h3 className="font-display text-xl lg:text-2xl font-bold text-white drop-shadow-lg">{cat.name}</h3>
                 </div>
               </Link>
             ))}
