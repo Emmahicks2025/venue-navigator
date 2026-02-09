@@ -53,6 +53,8 @@ export interface CartItem {
   eventName: string;
   eventDate: string;
   venueName: string;
+  performer?: string;
+  performerImage?: string;
   seats: SelectedSeat[];
 }
 
