@@ -1,14 +1,29 @@
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Trophy, Calendar, MapPin, Loader2 } from 'lucide-react';
+import { Trophy, Calendar, MapPin, Loader2, Search, X } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { CategoryTabs } from '@/components/events/CategoryTabs';
 import { useWorldCupEvents } from '@/hooks/useDbEvents';
 import { formatDate, formatPrice } from '@/data/events';
+import { Input } from '@/components/ui/input';
 
 const WorldCupPage = () => {
   const { data: events, isLoading } = useWorldCupEvents();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const matches = events || [];
+  const matches = useMemo(() => {
+    const all = events || [];
+    if (!searchQuery.trim()) return all;
+    const q = searchQuery.toLowerCase();
+    return all.filter(m =>
+      (m.home_team?.toLowerCase().includes(q)) ||
+      (m.away_team?.toLowerCase().includes(q)) ||
+      (m.venue_name?.toLowerCase().includes(q)) ||
+      (m.group_name?.toLowerCase().includes(q)) ||
+      (m.round?.toLowerCase().includes(q)) ||
+      (m.name?.toLowerCase().includes(q))
+    );
+  }, [events, searchQuery]);
 
   return (
     <Layout>
@@ -37,9 +52,38 @@ const WorldCupPage = () => {
         </div>
       </section>
 
-      {/* Matches Grid */}
-      <section className="py-8 lg:py-12">
+      {/* Search */}
+      <section className="pt-6 pb-2">
         <div className="container mx-auto px-4">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by team, venue, group..."
+              className="pl-10 pr-9 bg-secondary border-border"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Matches Grid */}
+      <section className="py-6 lg:py-10">
+        <div className="container mx-auto px-4">
+          {searchQuery && (
+            <p className="text-sm text-muted-foreground mb-4">
+              {matches.length} match{matches.length !== 1 ? 'es' : ''} found for "{searchQuery}"
+            </p>
+          )}
           {isLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-8 h-8 text-primary animate-spin" />
