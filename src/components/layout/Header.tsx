@@ -134,6 +134,15 @@ export const Header = () => {
                 {link.label}
               </Link>
             ))}
+            {user && (
+              <Link
+                to="/dashboard"
+                className="px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                My Dashboard
+              </Link>
+            )}
             <Link
               to="/events/world-cup"
               className={cn(
@@ -157,21 +166,12 @@ export const Header = () => {
               </Link>
             )}
             {user ? (
-              <>
-                <Link
-                  to="/dashboard"
-                  className="px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  My Dashboard
-                </Link>
-                <button
-                  onClick={() => { signOut(); setIsMenuOpen(false); }}
-                  className="px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary text-left transition-all duration-200"
-                >
-                  Sign Out
-                </button>
-              </>
+              <button
+                onClick={() => { signOut(); setIsMenuOpen(false); }}
+                className="px-4 py-3 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary text-left transition-all duration-200"
+              >
+                Sign Out
+              </button>
             ) : (
               <Link
                 to="/auth"
