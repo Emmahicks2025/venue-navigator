@@ -95,7 +95,7 @@ const WorldCupPage = () => {
                 <Link
                   key={match.id}
                   to={`/match/${match.id}`}
-                  className="group animate-slide-up rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-card via-card to-emerald-950/20 p-5 hover:shadow-xl hover:shadow-emerald-500/10 hover:border-emerald-500/40 transition-all duration-300"
+                  className="group animate-slide-up rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-slate-700/60 via-slate-700/40 to-emerald-900/30 p-5 hover:shadow-xl hover:shadow-emerald-500/15 hover:border-emerald-400/50 transition-all duration-300"
                   style={{ animationDelay: `${index * 0.03}s` }}
                 >
                   {/* Top Badge Row */}
@@ -122,7 +122,7 @@ const WorldCupPage = () => {
                   </div>
 
                   {/* Teams */}
-                  <div className="py-3 px-2 mb-4 rounded-xl bg-background/50 border border-border/50">
+                  <div className="py-3 px-2 mb-4 rounded-xl bg-slate-600/30 border border-slate-500/30">
                     <MatchTeams homeTeam={match.home_team} awayTeam={match.away_team} size="md" className="text-foreground group-hover:text-emerald-400 transition-colors" />
                   </div>
 
