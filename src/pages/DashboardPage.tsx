@@ -64,46 +64,6 @@ const DashboardPage = () => {
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Ticket className="w-5 h-5 text-primary" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{upcomingTickets.length}</p>
-            <p className="text-sm text-muted-foreground">Upcoming Events</p>
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                <Package className="w-5 h-5 text-accent" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{orders.length}</p>
-            <p className="text-sm text-muted-foreground">Total Orders</p>
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-success" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{pastTickets.length}</p>
-            <p className="text-sm text-muted-foreground">Past Events</p>
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
-                <Send className="w-5 h-5 text-warning" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{transfers.length}</p>
-            <p className="text-sm text-muted-foreground">Transfers</p>
-          </div>
-        </div>
-
         {/* Main Tabs */}
         <Tabs defaultValue="upcoming" className="w-full">
           <TabsList className="w-full grid grid-cols-4 mb-6 bg-secondary/50 p-1 rounded-xl h-auto">
