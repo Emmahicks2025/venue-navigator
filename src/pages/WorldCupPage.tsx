@@ -95,45 +95,55 @@ const WorldCupPage = () => {
                 <Link
                   key={match.id}
                   to={`/match/${match.id}`}
-                  className="group animate-slide-up rounded-xl border border-border bg-card p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+                  className="group animate-slide-up rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-card via-card to-emerald-950/20 p-5 hover:shadow-xl hover:shadow-emerald-500/10 hover:border-emerald-500/40 transition-all duration-300"
                   style={{ animationDelay: `${index * 0.03}s` }}
                 >
-                  <div className="flex items-center justify-between mb-3">
+                  {/* Top Badge Row */}
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       {match.group_name ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#02B906] text-white uppercase tracking-wide">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#02B906] text-white uppercase tracking-wider shadow-sm shadow-[#02B906]/30">
                           Group {match.group_name}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-gradient-to-r from-[#FFDB00] to-[#FFB800] text-black uppercase tracking-wide">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-gradient-to-r from-[#FFDB00] to-[#FFB800] text-black uppercase tracking-wider shadow-sm shadow-yellow-500/30">
                           {match.round}
                         </span>
                       )}
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-[10px] text-muted-foreground font-medium">
                         Match {match.match_number}
                       </span>
                     </div>
                     {match.is_featured && (
-                      <span className="text-xs bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-full font-medium">
-                        Featured
+                      <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider">
+                        ⭐ Featured
                       </span>
                     )}
                   </div>
-                  <MatchTeams homeTeam={match.home_team} awayTeam={match.away_team} size="md" className="text-foreground mb-3 group-hover:text-primary transition-colors" />
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5" />
+
+                  {/* Teams */}
+                  <div className="py-3 px-2 mb-4 rounded-xl bg-background/50 border border-border/50">
+                    <MatchTeams homeTeam={match.home_team} awayTeam={match.away_team} size="md" className="text-foreground group-hover:text-emerald-400 transition-colors" />
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-end justify-between">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Calendar className="w-3.5 h-3.5 text-emerald-500/70" />
                         {formatDate(match.date)}
                       </span>
-                      <span className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5" />
+                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-500/70" />
                         {match.venue_name}
                       </span>
                     </div>
-                    <span className="text-sm font-semibold text-primary">
-                      From {formatPrice(match.min_price)}
-                    </span>
+                    <div className="text-right">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">From</p>
+                      <p className="text-base font-bold text-emerald-400">
+                        {formatPrice(match.min_price)}
+                      </p>
+                    </div>
                   </div>
                 </Link>
               ))}
