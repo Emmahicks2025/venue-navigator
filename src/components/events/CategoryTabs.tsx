@@ -76,11 +76,11 @@ export const CategoryTabs = ({ activeCategory, className }: CategoryTabsProps) =
 
       <div
         ref={scrollRef}
-        className="flex items-center gap-1.5 overflow-x-auto pb-1.5 snap-x snap-mandatory scroll-smooth"
+        className="flex items-center gap-1.5 overflow-x-auto pb-1.5 snap-x snap-mandatory scroll-smooth no-scrollbar"
         style={{
           WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
+          touchAction: 'pan-x',
+          overscrollBehaviorX: 'contain',
         }}
       >
         {categoryConfig.slice(0, 2).map(({ id, icon: Icon, color }) => {
