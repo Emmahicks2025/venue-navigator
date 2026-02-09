@@ -8,13 +8,16 @@ import { Label } from '@/components/ui/label';
 import { useCart } from '@/context/CartContext';
 import { formatPrice, formatDate } from '@/data/events';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const { items, getTotalPrice, clearCart } = useCart();
+  const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
+    email: user?.email || '',
     firstName: '',
     lastName: '',
     cardNumber: '',
@@ -43,13 +46,67 @@ const CheckoutPage = () => {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-    toast.success('Order confirmed! Check your email for tickets.');
-    clearCart();
-    navigate('/order-success');
-    setIsProcessing(false);
+      const orderNumber = `TO${Date.now().toString().slice(-8)}`;
+
+      if (user) {
+        // Create order in database
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            user_id: user.id,
+            order_number: orderNumber,
+            status: 'confirmed',
+            subtotal: totalPrice,
+            service_fee: serviceFee,
+            total: grandTotal,
+            billing_email: formData.email,
+            billing_first_name: formData.firstName,
+            billing_last_name: formData.lastName,
+            billing_address: formData.billingAddress,
+            billing_city: formData.city,
+            billing_zip: formData.zipCode,
+          })
+          .select()
+          .single();
+
+        if (orderError) throw orderError;
+
+        // Create tickets for each seat in each cart item
+        const ticketInserts = items.flatMap((item) =>
+          item.seats.map((seat) => ({
+            order_id: order.id,
+            user_id: user.id,
+            event_id: item.eventId,
+            event_name: item.eventName,
+            event_date: item.eventDate,
+            venue_name: item.venueName,
+            section_name: seat.sectionName,
+            row_name: seat.row,
+            seat_number: seat.seatNumber,
+            price: seat.price,
+            status: 'active',
+          }))
+        );
+
+        const { error: ticketsError } = await supabase
+          .from('tickets')
+          .insert(ticketInserts);
+
+        if (ticketsError) throw ticketsError;
+      }
+
+      toast.success('Order confirmed! Check your email for tickets.');
+      clearCart();
+      navigate('/order-success');
+    } catch (err: any) {
+      toast.error(err.message || 'Payment failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (

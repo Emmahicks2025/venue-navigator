@@ -95,6 +95,60 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          billing_address: string | null
+          billing_city: string | null
+          billing_email: string | null
+          billing_first_name: string | null
+          billing_last_name: string | null
+          billing_zip: string | null
+          created_at: string
+          id: string
+          order_number: string
+          service_fee: number
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_email?: string | null
+          billing_first_name?: string | null
+          billing_last_name?: string | null
+          billing_zip?: string | null
+          created_at?: string
+          id?: string
+          order_number: string
+          service_fee?: number
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_address?: string | null
+          billing_city?: string | null
+          billing_email?: string | null
+          billing_first_name?: string | null
+          billing_last_name?: string | null
+          billing_zip?: string | null
+          created_at?: string
+          id?: string
+          order_number?: string
+          service_fee?: number
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       performer_images: {
         Row: {
           created_at: string
@@ -151,6 +205,128 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      ticket_transfers: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          id: string
+          message: string | null
+          status: string
+          ticket_id: string
+          to_email: string
+          to_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          id?: string
+          message?: string | null
+          status?: string
+          ticket_id: string
+          to_email: string
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          message?: string | null
+          status?: string
+          ticket_id?: string
+          to_email?: string
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_transfers_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          barcode: string
+          created_at: string
+          event_date: string
+          event_id: string
+          event_name: string
+          event_time: string
+          id: string
+          order_id: string
+          performer: string | null
+          performer_image: string | null
+          price: number
+          row_name: string
+          seat_number: number
+          section_name: string
+          status: string
+          updated_at: string
+          user_id: string
+          venue_name: string
+        }
+        Insert: {
+          barcode?: string
+          created_at?: string
+          event_date: string
+          event_id: string
+          event_name: string
+          event_time?: string
+          id?: string
+          order_id: string
+          performer?: string | null
+          performer_image?: string | null
+          price?: number
+          row_name: string
+          seat_number: number
+          section_name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          venue_name: string
+        }
+        Update: {
+          barcode?: string
+          created_at?: string
+          event_date?: string
+          event_id?: string
+          event_name?: string
+          event_time?: string
+          id?: string
+          order_id?: string
+          performer?: string | null
+          performer_image?: string | null
+          price?: number
+          row_name?: string
+          seat_number?: number
+          section_name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          venue_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
