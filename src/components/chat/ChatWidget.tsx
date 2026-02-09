@@ -113,7 +113,7 @@ export function ChatWidget() {
               {/* Welcome message as a chat bubble */}
               <ChatMessage role="assistant" content="Hi there! 👋 Welcome to TixOrbit. How can I help you today?" />
               <div className="flex flex-wrap gap-1.5 pl-9">
-                {['Find event tickets', 'World Cup 2026', 'Seating help'].map(q => (
+                {['Look up my order', 'Find event tickets', 'World Cup 2026', 'Seating help'].map(q => (
                   <button
                     key={q}
                     onClick={() => sendMessage(q)}
