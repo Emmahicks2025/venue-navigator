@@ -172,8 +172,8 @@ const AuthPage = () => {
 
   return (
     <Layout>
-      <div className="flex items-center justify-center min-h-[60vh] px-4">
-        <div className="w-full max-w-md">
+      <div className="flex items-center justify-center min-h-[60vh] px-4 py-12">
+        <div className="w-full max-w-md bg-card/80 backdrop-blur-sm border border-border/60 rounded-2xl p-8 shadow-lg">
           {/* Invisible reCAPTCHA container */}
           <div id="recaptcha-container" />
 
@@ -312,7 +312,7 @@ const AuthPage = () => {
                   </div>
                 )}
 
-                <Button type="submit" className="w-full" disabled={submitting || sendingCode}>
+                <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={submitting || sendingCode}>
                   {submitting || sendingCode ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : isLogin ? (
