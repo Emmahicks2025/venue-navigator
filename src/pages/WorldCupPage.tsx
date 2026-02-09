@@ -54,10 +54,20 @@ const WorldCupPage = () => {
                   style={{ animationDelay: `${index * 0.03}s` }}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs text-muted-foreground">
-                      Match {match.match_number} · {match.round}
-                      {match.group_name ? ` · Group ${match.group_name}` : ''}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {match.group_name ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#02B906] text-white uppercase tracking-wide">
+                          Group {match.group_name}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-gradient-to-r from-[#FFDB00] to-[#FFB800] text-black uppercase tracking-wide">
+                          {match.round}
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        Match {match.match_number}
+                      </span>
+                    </div>
                     {match.is_featured && (
                       <span className="text-xs bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-full font-medium">
                         Featured

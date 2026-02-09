@@ -71,10 +71,20 @@ export function WorldCupSection() {
                 className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-3 hover:bg-white/10 transition-all"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-emerald-300/70">
-                    Match {match.match_number} · {match.round}
-                    {match.group_name ? ` · Group ${match.group_name}` : ''}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {match.group_name ? (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#02B906] text-white uppercase tracking-wide">
+                        Group {match.group_name}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-[#FFDB00] to-[#FFB800] text-black uppercase tracking-wide">
+                        {match.round}
+                      </span>
+                    )}
+                    <span className="text-xs text-emerald-300/70">
+                      Match {match.match_number}
+                    </span>
+                  </div>
                 </div>
                 <h3 className="font-semibold text-white text-sm mb-2">
                   {match.home_team} vs {match.away_team}
