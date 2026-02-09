@@ -29,21 +29,22 @@ let batchPromise: Promise<void> | null = null;
 const batchListeners = new Map<string, Array<(url: string | null) => void>>();
 
 // Load ALL cached images from the database at once (runs once per session)
+// Uses type cast since performer_images table may not be in generated types yet
 async function loadDbCache(): Promise<void> {
   if (dbCacheLoaded) return;
   if (dbCachePromise) return dbCachePromise;
 
   dbCachePromise = (async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('performer_images')
         .select('performer_name, image_url');
 
       if (!error && data) {
-        for (const row of data) {
+        for (const row of data as { performer_name: string; image_url: string }[]) {
           imageCache.set(row.performer_name.toLowerCase(), row.image_url);
         }
-        console.log(`[ImageCache] Loaded ${data.length} cached performer images from DB`);
+        console.log(`[ImageCache] Loaded ${(data as any[]).length} cached performer images from DB`);
       }
     } catch (err) {
       console.error('[ImageCache] Failed to load DB cache:', err);
@@ -69,11 +70,11 @@ function scheduleBatchFetch(performer: string): Promise<string | null> {
 
     pendingPerformers.add(performer);
 
-    // Debounce: wait 100ms to collect all performers from the render cycle
+    // Debounce: wait 150ms to collect all performers from the render cycle
     if (batchTimer) clearTimeout(batchTimer);
     batchTimer = setTimeout(() => {
       executeBatchFetch();
-    }, 100);
+    }, 150);
   });
 }
 
@@ -152,15 +153,22 @@ export function useTicketmasterImage(
   category: string
 ): { imageUrl: string; isLoading: boolean } {
   const fallback = existingImage || getDefaultCategoryImage(category);
-  const cacheKey = performer.toLowerCase().trim();
+  const cacheKey = performer?.toLowerCase().trim() || '';
 
   // Synchronous cache check
-  const cachedUrl = imageCache.get(cacheKey);
+  const cachedUrl = cacheKey ? imageCache.get(cacheKey) : undefined;
 
   const [imageUrl, setImageUrl] = useState<string>(cachedUrl || fallback);
-  const [isLoading, setIsLoading] = useState<boolean>(!cachedUrl);
+  const [isLoading, setIsLoading] = useState<boolean>(!!cacheKey && !cachedUrl);
 
   useEffect(() => {
+    // Skip if no performer name
+    if (!cacheKey) {
+      setImageUrl(fallback);
+      setIsLoading(false);
+      return;
+    }
+
     // If already cached, use it
     if (imageCache.has(cacheKey)) {
       setImageUrl(imageCache.get(cacheKey)!);
@@ -192,7 +200,7 @@ export function useTicketmasterImage(
     })();
 
     return () => { cancelled = true; };
-  }, [performer, cacheKey]);
+  }, [performer, cacheKey, fallback]);
 
   return { imageUrl, isLoading };
 }

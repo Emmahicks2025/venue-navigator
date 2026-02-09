@@ -105,17 +105,20 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     
     // Support both single performer and batch performers
     const performers: string[] = body.performers
-      ? (body.performers as string[]).map((p: string) => p.trim()).filter(Boolean)
+      ? (body.performers as string[]).map((p: string) => (p || '').trim()).filter(Boolean)
       : body.performer
         ? [body.performer.trim()]
         : [];
 
     if (performers.length === 0) {
-      throw new Error('Missing "performer" or "performers" in request body');
+      return new Response(
+        JSON.stringify({ images: {}, cached: 0, fetched: 0, message: 'No performers provided' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`Processing ${performers.length} performer(s)...`);
