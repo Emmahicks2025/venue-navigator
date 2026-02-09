@@ -74,11 +74,14 @@ const HelpPage = () => {
         <section>
           <h2 className="font-display text-xl font-semibold text-foreground mb-6">Still Need Help?</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="border border-border rounded-xl p-5 text-center space-y-2">
+            <button
+              onClick={() => window.dispatchEvent(new Event('open-chat-widget'))}
+              className="border border-border rounded-xl p-5 text-center space-y-2 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer w-full"
+            >
               <MessageCircle className="w-6 h-6 text-primary mx-auto" />
               <h3 className="font-semibold text-foreground text-sm">Live Chat</h3>
-              <p className="text-xs text-muted-foreground">Click the chat icon in the bottom-right corner for instant support.</p>
-            </div>
+              <p className="text-xs text-muted-foreground">Click here to start a live chat with our support team.</p>
+            </button>
             <div className="border border-border rounded-xl p-5 text-center space-y-2">
               <Mail className="w-6 h-6 text-primary mx-auto" />
               <h3 className="font-semibold text-foreground text-sm">Email</h3>

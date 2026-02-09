@@ -28,6 +28,13 @@ export function ChatWidget() {
     }
   }, [isOpen, isMinimized]);
 
+  // Listen for external open requests
+  useEffect(() => {
+    const handler = () => handleOpen();
+    window.addEventListener('open-chat-widget', handler);
+    return () => window.removeEventListener('open-chat-widget', handler);
+  }, []);
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     const msg = input;
