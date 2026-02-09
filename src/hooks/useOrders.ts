@@ -53,13 +53,19 @@ export function useUserOrders() {
     queryKey: ['user-orders', user?.uid],
     queryFn: async () => {
       if (!user) return [];
-      const q = query(
-        collection(db, 'orders'),
-        where('user_id', '==', user.uid),
-        orderBy('created_at', 'desc')
-      );
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as OrderRow));
+      try {
+        const q = query(
+          collection(db, 'orders'),
+          where('user_id', '==', user.uid),
+          orderBy('created_at', 'desc')
+        );
+        const snapshot = await getDocs(q);
+        console.log('[DEBUG] Orders count:', snapshot.docs.length);
+        return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as OrderRow));
+      } catch (err) {
+        console.error('[DEBUG] Orders query error:', err);
+        throw err;
+      }
     },
     enabled: !!user,
   });
@@ -72,34 +78,40 @@ export function useUserTickets() {
     queryKey: ['user-tickets', user?.uid],
     queryFn: async () => {
       if (!user) return [];
-      const q = query(
-        collection(db, 'tickets'),
-        where('user_id', '==', user.uid),
-        orderBy('event_date', 'asc')
-      );
-      const snapshot = await getDocs(q);
-      const tickets = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TicketRow));
+      try {
+        const q = query(
+          collection(db, 'tickets'),
+          where('user_id', '==', user.uid),
+          orderBy('event_date', 'asc')
+        );
+        const snapshot = await getDocs(q);
+        console.log('[DEBUG] Tickets count:', snapshot.docs.length);
+        const tickets = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TicketRow));
 
-      // Enrich tickets missing performer_image from performer_images collection
-      const missingImage = tickets.filter((t) => !t.performer_image && t.performer);
-      if (missingImage.length > 0) {
-        const performerNames = [...new Set(missingImage.map((t) => t.performer!))];
-        const imgQuery = query(
-          collection(db, 'performer_images'),
-          where('performer_name', 'in', performerNames.slice(0, 30)) // Firestore 'in' limit is 30
-        );
-        const imgSnapshot = await getDocs(imgQuery);
-        const imageMap = new Map(
-          imgSnapshot.docs.map((d) => [d.data().performer_name, d.data().image_url])
-        );
-        tickets.forEach((t) => {
-          if (!t.performer_image && t.performer && imageMap.has(t.performer)) {
-            t.performer_image = imageMap.get(t.performer)!;
-          }
-        });
+        // Enrich tickets missing performer_image from performer_images collection
+        const missingImage = tickets.filter((t) => !t.performer_image && t.performer);
+        if (missingImage.length > 0) {
+          const performerNames = [...new Set(missingImage.map((t) => t.performer!))];
+          const imgQuery = query(
+            collection(db, 'performer_images'),
+            where('performer_name', 'in', performerNames.slice(0, 30))
+          );
+          const imgSnapshot = await getDocs(imgQuery);
+          const imageMap = new Map(
+            imgSnapshot.docs.map((d) => [d.data().performer_name, d.data().image_url])
+          );
+          tickets.forEach((t) => {
+            if (!t.performer_image && t.performer && imageMap.has(t.performer)) {
+              t.performer_image = imageMap.get(t.performer)!;
+            }
+          });
+        }
+
+        return tickets;
+      } catch (err) {
+        console.error('[DEBUG] Tickets query error:', err);
+        throw err;
       }
-
-      return tickets;
     },
     enabled: !!user,
   });
@@ -112,13 +124,19 @@ export function useUserTransfers() {
     queryKey: ['user-transfers', user?.uid],
     queryFn: async () => {
       if (!user) return [];
-      const q = query(
-        collection(db, 'ticket_transfers'),
-        where('from_user_id', '==', user.uid),
-        orderBy('created_at', 'desc')
-      );
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TransferRow));
+      try {
+        const q = query(
+          collection(db, 'ticket_transfers'),
+          where('from_user_id', '==', user.uid),
+          orderBy('created_at', 'desc')
+        );
+        const snapshot = await getDocs(q);
+        console.log('[DEBUG] Transfers count:', snapshot.docs.length);
+        return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as TransferRow));
+      } catch (err) {
+        console.error('[DEBUG] Transfers query error:', err);
+        throw err;
+      }
     },
     enabled: !!user,
   });
