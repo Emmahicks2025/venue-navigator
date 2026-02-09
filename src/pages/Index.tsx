@@ -102,31 +102,6 @@ const Index = () => {
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
       </section>
 
-      {/* Sell Tickets CTA Banner */}
-      <section className="py-6 lg:py-8">
-        <div className="container mx-auto px-4">
-          <Link to="/sell" className="block group">
-            <div className="relative overflow-hidden rounded-2xl p-6 sm:p-8 bg-gradient-to-r from-accent/20 via-accent/10 to-primary/20 border border-accent/30 hover:border-accent/50 transition-all duration-300">
-              <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-primary/5 group-hover:from-accent/10 group-hover:to-primary/10 transition-all duration-300" />
-              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center shrink-0">
-                    <DollarSign className="w-6 h-6 text-accent" />
-                  </div>
-                  <div>
-                    <h3 className="font-display text-xl sm:text-2xl font-bold text-foreground">Got Tickets to Sell?</h3>
-                    <p className="text-sm text-muted-foreground">List your tickets in minutes. Secure payment, verified delivery, zero upfront fees.</p>
-                  </div>
-                </div>
-                <Button className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-2 btn-accent-glow shrink-0 px-6">
-                  Sell Now <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </div>
-            </div>
-          </Link>
-        </div>
-      </section>
-
       {/* Top Artists */}
       <TopArtistsSection />
 
@@ -219,6 +194,31 @@ const Index = () => {
               <Button variant="outline" className="w-full">View All Events</Button>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* Sell Tickets CTA Banner */}
+      <section className="py-6 lg:py-8">
+        <div className="container mx-auto px-4">
+          <Link to="/sell" className="block group">
+            <div className="relative overflow-hidden rounded-2xl p-6 sm:p-8 bg-gradient-to-r from-accent/20 via-accent/10 to-primary/20 border border-accent/30 hover:border-accent/50 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-accent/5 to-primary/5 group-hover:from-accent/10 group-hover:to-primary/10 transition-all duration-300" />
+              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center shrink-0">
+                    <DollarSign className="w-6 h-6 text-accent" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-xl sm:text-2xl font-bold text-foreground">Got Tickets to Sell?</h3>
+                    <p className="text-sm text-muted-foreground">List your tickets in minutes. Secure payment, verified delivery, zero upfront fees.</p>
+                  </div>
+                </div>
+                <Button className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-2 btn-accent-glow shrink-0 px-6">
+                  Sell Now <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            </div>
+          </Link>
         </div>
       </section>
 
