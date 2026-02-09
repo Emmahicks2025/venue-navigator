@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SVGSection, parseSVGSections } from '@/lib/svgParser';
+import { getVenueMapSVG } from '@/data/venueMapRegistry';
 
 const FALLBACK_MAP = '_general';
 
@@ -12,26 +13,17 @@ interface UseVenueSVGResult {
 }
 
 // Normalize venue name for SVG filename lookup
-// Handles special characters that cause issues with dev server
 function normalizeVenueName(name: string): string {
-  // Replace & with empty (AT&T -> ATT) to match renamed files
   return name.replace(/&/g, '');
 }
 
-async function fetchSVG(name: string): Promise<{ content: string; sections: SVGSection[] }> {
-  // Normalize the venue name to handle special characters like &
+function loadSVGFromRegistry(name: string): { content: string; sections: SVGSection[] } {
   const normalizedName = normalizeVenueName(name);
-  // Encode each path segment properly - spaces become %20 which works on all servers
-  const url = `/venue-maps/${encodeURIComponent(normalizedName)}.svg`;
-  console.log(`[VenueSVG] Fetching: ${url} (original: "${name}")`);
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Failed to load venue map: ${response.status}`);
-  const content = await response.text();
+  console.log(`[VenueSVG] Loading from registry: "${normalizedName}" (original: "${name}")`);
   
-  // Verify we got actual SVG content, not an HTML page (SPA fallback)
-  if (!content.includes('<svg') && !content.includes('<?xml')) {
-    console.warn(`[VenueSVG] Response for "${name}" is not SVG (got HTML/other). Content starts with: ${content.substring(0, 100)}`);
-    throw new Error('Response is not SVG content (likely SPA fallback)');
+  const content = getVenueMapSVG(normalizedName);
+  if (!content) {
+    throw new Error(`Venue map not found in registry: ${normalizedName}`);
   }
   
   const sections = parseSVGSections(content);
@@ -51,16 +43,14 @@ export function useVenueSVG(venueName: string | undefined): UseVenueSVGResult {
       return;
     }
 
-    const loadSVG = async () => {
+    const loadSVG = () => {
       setLoading(true);
       setError(null);
       setIsFallback(false);
 
       try {
-        // Try the venue-specific map first
-        const result = await fetchSVG(venueName);
+        const result = loadSVGFromRegistry(venueName);
 
-        // If the SVG loaded but has no interactive sections, treat as failure
         if (result.sections.length === 0) {
           throw new Error('Map has no interactive sections');
         }
@@ -70,7 +60,6 @@ export function useVenueSVG(venueName: string | undefined): UseVenueSVGResult {
       } catch (primaryErr) {
         console.warn(`Primary map failed for "${venueName}", loading fallback...`, primaryErr);
 
-        // Don't retry fallback if we already tried it
         if (venueName === FALLBACK_MAP) {
           setError('Failed to load venue map');
           setSvgContent(null);
@@ -80,7 +69,7 @@ export function useVenueSVG(venueName: string | undefined): UseVenueSVGResult {
         }
 
         try {
-          const fallback = await fetchSVG(FALLBACK_MAP);
+          const fallback = loadSVGFromRegistry(FALLBACK_MAP);
           setSvgContent(fallback.content);
           setSections(fallback.sections);
           setIsFallback(true);
