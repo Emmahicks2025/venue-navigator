@@ -32,6 +32,9 @@ interface Event {
   min_price: number;
   max_price: number;
   svg_map_name: string | null;
+  ticket_url: string | null;
+  performer_image: string | null;
+  source: string | null;
   match_number: number | null;
   round: string | null;
   group_name: string | null;
@@ -234,6 +237,9 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
     min_price: event?.min_price || 0,
     max_price: event?.max_price || 0,
     svg_map_name: event?.svg_map_name || '',
+    ticket_url: event?.ticket_url || '',
+    performer_image: event?.performer_image || '',
+    source: event?.source || '',
     match_number: event?.match_number || null,
     round: event?.round || '',
     group_name: event?.group_name || '',
@@ -251,6 +257,9 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
       const eventData = {
         ...formData,
         svg_map_name: formData.svg_map_name || null,
+        ticket_url: formData.ticket_url || null,
+        performer_image: formData.performer_image || null,
+        source: formData.source || null,
         match_number: formData.match_number || null,
         round: formData.round || null,
         group_name: formData.group_name || null,
@@ -448,6 +457,41 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
               </Command>
             </PopoverContent>
           </Popover>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="ticket_url">Ticket URL</Label>
+          <Input
+            id="ticket_url"
+            type="url"
+            value={formData.ticket_url}
+            onChange={(e) => setFormData({ ...formData, ticket_url: e.target.value })}
+            placeholder="https://..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="performer_image">Performer Image URL</Label>
+          <Input
+            id="performer_image"
+            type="url"
+            value={formData.performer_image}
+            onChange={(e) => setFormData({ ...formData, performer_image: e.target.value })}
+            placeholder="https://..."
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="source">Source</Label>
+          <Input
+            id="source"
+            value={formData.source}
+            onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+            placeholder="e.g., ticketmaster, manual"
+          />
         </div>
       </div>
 
