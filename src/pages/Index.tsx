@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Calendar, Sparkles } from 'lucide-react';
+import { MapPin, Calendar, Sparkles, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { EventCard } from '@/components/events/EventCard';
@@ -9,28 +9,32 @@ import { TopArtistsSection } from '@/components/home/TopArtistsSection';
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
 
-import { events, getFeaturedEvents, getEventsByCategory, formatPrice } from '@/data/events';
-import { getEventsByCity } from '@/data/eventsData';
+import { formatPrice } from '@/data/events';
 import { useUserLocation } from '@/hooks/useUserLocation';
+import { useFeaturedDbEvents, useDbEventsByCategory, useDbEventsByCity, useDbCategoryCounts, mapDbEventToFrontend } from '@/hooks/useDbEvents';
 import heroImage from '@/assets/hero-stadium.jpg';
 
 const Index = () => {
-  const featuredEvents = getFeaturedEvents();
   const { location, loading: locationLoading } = useUserLocation();
 
-  // Get events based on user's city or fallback to all events
-  const localEvents = location?.city ? getEventsByCity(location.city) : [];
-  const upcomingEvents = localEvents.length > 0 ? localEvents.slice(0, 6) : events.slice(0, 6);
-  const hasLocalEvents = localEvents.length > 0;
+  const { data: featuredDbEvents, isLoading: featuredLoading } = useFeaturedDbEvents();
+  const { data: allDbEvents } = useDbEventsByCategory('all');
+  const { data: localDbEvents } = useDbEventsByCity(location?.city);
+  const { data: categoryCounts } = useDbCategoryCounts();
 
-  const concertEvents = getEventsByCategory('concerts').slice(0, 4);
-  const sportsEvents = getEventsByCategory('sports').slice(0, 4);
+  const featuredEvents = (featuredDbEvents || []).map(mapDbEventToFrontend);
+  const allEvents = (allDbEvents || []).map(mapDbEventToFrontend);
+  const localEvents = (localDbEvents || []).map(mapDbEventToFrontend);
+
+  const hasLocalEvents = localEvents.length > 0;
+  const upcomingEvents = hasLocalEvents ? localEvents.slice(0, 6) : allEvents.slice(0, 6);
+
+  const getCategoryCount = (cat: string) => categoryCounts?.[cat] || 0;
 
   return (
     <Layout>
       {/* Hero Section */}
       <section className="relative pt-20 pb-12 sm:pt-24 sm:pb-16 lg:pt-32 lg:pb-20 overflow-hidden">
-        {/* Background Image */}
         <div className="absolute inset-0">
           <img
             src={heroImage}
@@ -41,7 +45,6 @@ const Index = () => {
           <div className="absolute inset-0 section-glow opacity-50" />
         </div>
 
-        {/* Content */}
         <div className="relative z-10 container mx-auto px-4 text-center">
           <div className="animate-slide-up">
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 tracking-tight">
@@ -54,12 +57,10 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Search Bar */}
           <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
             <SearchBar variant="hero" className="mb-6" />
           </div>
 
-          {/* Quick Category Links */}
           <div className="animate-slide-up flex justify-center" style={{ animationDelay: '0.2s' }}>
             <CategoryTabs />
           </div>
@@ -68,7 +69,6 @@ const Index = () => {
 
       {/* Top Artists */}
       <TopArtistsSection />
-
 
       {/* Featured Events Carousel */}
       <section className="py-12 lg:py-16">
@@ -85,24 +85,28 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Carousel with touch support */}
-          <Carousel
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-            className="w-full"
-          >
-            <CarouselContent className="-ml-2 md:-ml-4">
-              {featuredEvents.map((event) => (
-                <CarouselItem key={event.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
-                  <EventCard event={event} variant="featured" />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="hidden sm:flex -left-4 lg:-left-12" />
-            <CarouselNext className="hidden sm:flex -right-4 lg:-right-12" />
-          </Carousel>
+          {featuredLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+            </div>
+          ) : featuredEvents.length > 0 ? (
+            <Carousel
+              opts={{ align: "start", loop: true }}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {featuredEvents.map((event) => (
+                  <CarouselItem key={event.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
+                    <EventCard event={event} variant="featured" />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden sm:flex -left-4 lg:-left-12" />
+              <CarouselNext className="hidden sm:flex -right-4 lg:-right-12" />
+            </Carousel>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">No featured events yet</p>
+          )}
         </div>
       </section>
 
@@ -162,21 +166,21 @@ const Index = () => {
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { name: 'Concerts', icon: '🎵', count: getEventsByCategory('concerts').length, color: 'from-blue-600 to-purple-600', href: '/events/concerts' },
-              { name: 'Sports', icon: '🏀', count: getEventsByCategory('sports').length, color: 'from-green-600 to-emerald-600', href: '/events/sports' },
-              { name: 'Theater', icon: '🎭', count: getEventsByCategory('theater').length, color: 'from-pink-600 to-rose-600', href: '/events/theater' },
-              { name: 'Comedy', icon: '😂', count: getEventsByCategory('comedy').length, color: 'from-yellow-600 to-orange-600', href: '/events/comedy' },
-            ].map((category) => (
+              { name: 'Concerts', icon: '🎵', category: 'concerts', color: 'from-blue-600 to-purple-600', href: '/events/concerts' },
+              { name: 'Sports', icon: '🏀', category: 'sports', color: 'from-green-600 to-emerald-600', href: '/events/sports' },
+              { name: 'Theater', icon: '🎭', category: 'theater', color: 'from-pink-600 to-rose-600', href: '/events/theater' },
+              { name: 'Comedy', icon: '😂', category: 'comedy', color: 'from-yellow-600 to-orange-600', href: '/events/comedy' },
+            ].map((cat) => (
               <Link
-                key={category.name}
-                to={category.href}
+                key={cat.name}
+                to={cat.href}
                 className="group relative overflow-hidden rounded-2xl p-6 lg:p-8 card-hover"
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
+                <div className={`absolute inset-0 bg-gradient-to-br ${cat.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
                 <div className="relative z-10">
-                  <span className="text-4xl lg:text-5xl mb-4 block">{category.icon}</span>
-                  <h3 className="font-display text-xl lg:text-2xl font-bold text-white mb-1">{category.name}</h3>
-                  <p className="text-white/70 text-sm">{category.count} events</p>
+                  <span className="text-4xl lg:text-5xl mb-4 block">{cat.icon}</span>
+                  <h3 className="font-display text-xl lg:text-2xl font-bold text-white mb-1">{cat.name}</h3>
+                  <p className="text-white/70 text-sm">{getCategoryCount(cat.category)} events</p>
                 </div>
               </Link>
             ))}
