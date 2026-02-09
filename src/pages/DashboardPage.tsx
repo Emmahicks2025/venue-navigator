@@ -4,10 +4,21 @@ import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserOrders, useUserTickets, useUserTransfers } from '@/hooks/useOrders';
-import { DashboardTicketCard } from '@/components/dashboard/DashboardTicketCard';
+import { useUserOrders, useUserTickets, useUserTransfers, TicketRow } from '@/hooks/useOrders';
+import { EventGroupCard } from '@/components/dashboard/EventGroupCard';
 import { OrderCard } from '@/components/dashboard/OrderCard';
 import { TransferHistoryCard } from '@/components/dashboard/TransferHistoryCard';
+
+/** Group tickets by event_id */
+function groupTicketsByEvent(tickets: TicketRow[]): Map<string, TicketRow[]> {
+  const map = new Map<string, TicketRow[]>();
+  for (const t of tickets) {
+    const group = map.get(t.event_id) || [];
+    group.push(t);
+    map.set(t.event_id, group);
+  }
+  return map;
+}
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -39,6 +50,9 @@ const DashboardPage = () => {
   const pastTickets = tickets.filter(
     (t) => t.status !== 'active' || new Date(t.event_date) < now
   );
+
+  const upcomingGroups = groupTicketsByEvent(upcomingTickets);
+  const pastGroups = groupTicketsByEvent(pastTickets);
 
   const isLoading = ordersLoading || ticketsLoading || transfersLoading;
 
@@ -89,10 +103,10 @@ const DashboardPage = () => {
           <TabsContent value="upcoming">
             {isLoading ? (
               <LoadingState />
-            ) : upcomingTickets.length > 0 ? (
+            ) : upcomingGroups.size > 0 ? (
               <div className="space-y-4">
-                {upcomingTickets.map((ticket) => (
-                  <DashboardTicketCard key={ticket.id} ticket={ticket} />
+                {Array.from(upcomingGroups.entries()).map(([eventId, groupTickets]) => (
+                  <EventGroupCard key={eventId} eventId={eventId} tickets={groupTickets} />
                 ))}
               </div>
             ) : (
@@ -110,10 +124,10 @@ const DashboardPage = () => {
           <TabsContent value="past">
             {isLoading ? (
               <LoadingState />
-            ) : pastTickets.length > 0 ? (
+            ) : pastGroups.size > 0 ? (
               <div className="space-y-4">
-                {pastTickets.map((ticket) => (
-                  <DashboardTicketCard key={ticket.id} ticket={ticket} isPast />
+                {Array.from(pastGroups.entries()).map(([eventId, groupTickets]) => (
+                  <EventGroupCard key={eventId} eventId={eventId} tickets={groupTickets} isPast />
                 ))}
               </div>
             ) : (
