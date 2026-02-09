@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 700" width="800" height="700">
+  <!-- Background -->
+  <rect width="800" height="700" fill="#1a1a2e"/>
+  
+  <!-- Pitch Area (Oval bowl) -->
+  <ellipse cx="400" cy="280" rx="180" ry="120" fill="#2d6a4f" stroke="#40916c" stroke-width="2"/>
+  <line x1="400" y1="160" x2="400" y2="400" stroke="#52b788" stroke-width="1" stroke-dasharray="4"/>
+  <circle cx="400" cy="280" r="30" fill="none" stroke="#52b788" stroke-width="1"/>
+
+  <!-- Tribuna (West Sideline - Premium) -->
+  <g data-section-id="tribuna" data-rows="20" data-seats-per-row="40" data-price-min="200" data-price-max="500" data-current-price="380" data-available="true">
+    <title>Section Tribuna | West Stand</title>
+    <path d="M80 170 L200 155 L200 405 L80 420 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Preferente (East Sideline) -->
+  <g data-section-id="preferente" data-rows="20" data-seats-per-row="40" data-price-min="150" data-price-max="400" data-current-price="300" data-available="true">
+    <title>Section Preferente | East Stand</title>
+    <path d="M600 155 L720 170 L720 420 L600 405 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Cabecera Norte (North End) -->
+  <g data-section-id="cabecera-norte" data-rows="15" data-seats-per-row="30" data-price-min="80" data-price-max="200" data-current-price="150" data-available="true">
+    <title>Section Cabecera Norte | North End</title>
+    <path d="M220 100 L580 100 L600 155 L200 155 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Cabecera Sur (South End) -->
+  <g data-section-id="cabecera-sur" data-rows="15" data-seats-per-row="30" data-price-min="80" data-price-max="200" data-current-price="150" data-available="true">
+    <title>Section Cabecera Sur | South End</title>
+    <path d="M200 405 L600 405 L580 460 L220 460 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Tribuna -->
+  <g data-section-id="upper-tribuna" data-rows="15" data-seats-per-row="35" data-price-min="60" data-price-max="150" data-current-price="110" data-available="true">
+    <title>Section Upper Tribuna | Upper West</title>
+    <path d="M30 190 L65 178 L65 415 L30 430 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Preferente -->
+  <g data-section-id="upper-preferente" data-rows="15" data-seats-per-row="35" data-price-min="60" data-price-max="150" data-current-price="110" data-available="true">
+    <title>Section Upper Preferente | Upper East</title>
+    <path d="M735 178 L770 190 L770 430 L735 415 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper North -->
+  <g data-section-id="upper-norte" data-rows="18" data-seats-per-row="40" data-price-min="30" data-price-max="90" data-current-price="60" data-available="true">
+    <title>Section Upper Norte | Upper North</title>
+    <path d="M180 40 L620 40 L580 100 L220 100 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper South -->
+  <g data-section-id="upper-sur" data-rows="18" data-seats-per-row="40" data-price-min="30" data-price-max="90" data-current-price="60" data-available="true">
+    <title>Section Upper Sur | Upper South</title>
+    <path d="M220 460 L580 460 L620 530 L180 530 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner NW -->
+  <g data-section-id="corner-nw" data-rows="10" data-seats-per-row="12" data-price-min="40" data-price-max="100" data-current-price="70" data-available="true">
+    <title>Section Corner NW | Corner</title>
+    <path d="M65 178 L200 100 L200 155 L80 170 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner NE -->
+  <g data-section-id="corner-ne" data-rows="10" data-seats-per-row="12" data-price-min="40" data-price-max="100" data-current-price="70" data-available="true">
+    <title>Section Corner NE | Corner</title>
+    <path d="M600 100 L735 178 L720 170 L600 155 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner SW -->
+  <g data-section-id="corner-sw" data-rows="10" data-seats-per-row="12" data-price-min="40" data-price-max="100" data-current-price="70" data-available="true">
+    <title>Section Corner SW | Corner</title>
+    <path d="M80 420 L200 405 L200 460 L65 415 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner SE -->
+  <g data-section-id="corner-se" data-rows="10" data-seats-per-row="12" data-price-min="40" data-price-max="100" data-current-price="70" data-available="true">
+    <title>Section Corner SE | Corner</title>
+    <path d="M600 405 L720 420 L735 415 L600 460 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+</svg>

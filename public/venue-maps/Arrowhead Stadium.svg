@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 750" width="900" height="750">
+  <!-- Background -->
+  <rect width="900" height="750" fill="#1a1a2e"/>
+  
+  <!-- Field/Pitch Area -->
+  <rect x="250" y="150" width="400" height="230" rx="8" fill="#2d6a4f" stroke="#40916c" stroke-width="2"/>
+  <line x1="450" y1="150" x2="450" y2="380" stroke="#52b788" stroke-width="1" stroke-dasharray="4"/>
+  <circle cx="450" cy="265" r="35" fill="none" stroke="#52b788" stroke-width="1"/>
+  <rect x="260" y="230" width="50" height="70" fill="none" stroke="#52b788" stroke-width="1"/>
+  <rect x="590" y="230" width="50" height="70" fill="none" stroke="#52b788" stroke-width="1"/>
+
+  <!-- Lower Bowl End Zone North -->
+  <g data-section-id="lower-north" data-rows="10" data-seats-per-row="30" data-price-min="150" data-price-max="350" data-current-price="280" data-available="true">
+    <title>Section Lower North | Lower Bowl</title>
+    <rect x="260" y="90" width="380" height="50" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Lower Bowl Sideline West -->
+  <g data-section-id="lower-west" data-rows="15" data-seats-per-row="35" data-price-min="120" data-price-max="300" data-current-price="220" data-available="true">
+    <title>Section Lower West | Lower Bowl</title>
+    <path d="M120 160 L230 140 L230 390 L120 410 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Lower Bowl Sideline East -->
+  <g data-section-id="lower-east" data-rows="15" data-seats-per-row="35" data-price-min="120" data-price-max="300" data-current-price="220" data-available="true">
+    <title>Section Lower East | Lower Bowl</title>
+    <path d="M670 140 L780 160 L780 410 L670 390 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Lower Bowl End Zone South -->
+  <g data-section-id="lower-south" data-rows="10" data-seats-per-row="30" data-price-min="100" data-price-max="250" data-current-price="180" data-available="true">
+    <title>Section Lower South | Lower Bowl</title>
+    <rect x="260" y="395" width="380" height="50" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Deck West -->
+  <g data-section-id="upper-west" data-rows="20" data-seats-per-row="30" data-price-min="50" data-price-max="130" data-current-price="90" data-available="true">
+    <title>Section Upper West | Upper Deck</title>
+    <path d="M40 180 L100 165 L100 405 L40 430 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Deck East -->
+  <g data-section-id="upper-east" data-rows="20" data-seats-per-row="30" data-price-min="50" data-price-max="130" data-current-price="90" data-available="true">
+    <title>Section Upper East | Upper Deck</title>
+    <path d="M800 165 L860 180 L860 430 L800 405 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Deck South -->
+  <g data-section-id="upper-south" data-rows="20" data-seats-per-row="40" data-price-min="35" data-price-max="100" data-current-price="65" data-available="true">
+    <title>Section Upper South | Upper Deck</title>
+    <rect x="200" y="460" width="500" height="60" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Deck North -->
+  <g data-section-id="upper-north" data-rows="15" data-seats-per-row="35" data-price-min="40" data-price-max="110" data-current-price="75" data-available="true">
+    <title>Section Upper North | Upper Deck</title>
+    <rect x="220" y="30" width="460" height="48" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner NW -->
+  <g data-section-id="corner-nw" data-rows="8" data-seats-per-row="12" data-price-min="60" data-price-max="150" data-current-price="100" data-available="true">
+    <title>Section Corner NW | Corner</title>
+    <path d="M100 100 L230 90 L230 140 L120 160 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner NE -->
+  <g data-section-id="corner-ne" data-rows="8" data-seats-per-row="12" data-price-min="60" data-price-max="150" data-current-price="100" data-available="true">
+    <title>Section Corner NE | Corner</title>
+    <path d="M670 90 L800 100 L780 160 L670 140 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner SW -->
+  <g data-section-id="corner-sw" data-rows="8" data-seats-per-row="12" data-price-min="55" data-price-max="130" data-current-price="90" data-available="true">
+    <title>Section Corner SW | Corner</title>
+    <path d="M120 410 L230 390 L230 460 L150 460 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner SE -->
+  <g data-section-id="corner-se" data-rows="8" data-seats-per-row="12" data-price-min="55" data-price-max="130" data-current-price="90" data-available="true">
+    <title>Section Corner SE | Corner</title>
+    <path d="M670 390 L780 410 L750 460 L670 460 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Nosebleed South -->
+  <g data-section-id="nosebleed-south" data-rows="15" data-seats-per-row="50" data-price-min="20" data-price-max="60" data-current-price="40" data-available="true">
+    <title>Section Nosebleed South | Nosebleed</title>
+    <rect x="150" y="535" width="600" height="55" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+</svg>

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 650" width="800" height="650">
+  <!-- Background -->
+  <rect width="800" height="650" fill="#1a1a2e"/>
+  
+  <!-- Pitch Area -->
+  <rect x="230" y="150" width="340" height="210" rx="8" fill="#2d6a4f" stroke="#40916c" stroke-width="2"/>
+  <line x1="400" y1="150" x2="400" y2="360" stroke="#52b788" stroke-width="1" stroke-dasharray="4"/>
+  <circle cx="400" cy="255" r="28" fill="none" stroke="#52b788" stroke-width="1"/>
+  <rect x="240" y="220" width="40" height="65" fill="none" stroke="#52b788" stroke-width="1"/>
+  <rect x="520" y="220" width="40" height="65" fill="none" stroke="#52b788" stroke-width="1"/>
+
+  <!-- Poniente (West Main Stand) -->
+  <g data-section-id="poniente" data-rows="16" data-seats-per-row="30" data-price-min="130" data-price-max="320" data-current-price="250" data-available="true">
+    <title>Section Poniente | West Stand</title>
+    <path d="M100 165 L210 150 L210 365 L100 380 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Oriente (East Stand) -->
+  <g data-section-id="oriente" data-rows="16" data-seats-per-row="30" data-price-min="110" data-price-max="280" data-current-price="210" data-available="true">
+    <title>Section Oriente | East Stand</title>
+    <path d="M590 150 L700 165 L700 380 L590 365 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Norte (North End) -->
+  <g data-section-id="norte" data-rows="12" data-seats-per-row="24" data-price-min="70" data-price-max="180" data-current-price="130" data-available="true">
+    <title>Section Norte | North End</title>
+    <rect x="240" y="85" width="320" height="55" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Sur (South End) -->
+  <g data-section-id="sur" data-rows="12" data-seats-per-row="24" data-price-min="70" data-price-max="180" data-current-price="130" data-available="true">
+    <title>Section Sur | South End</title>
+    <rect x="240" y="370" width="320" height="55" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Poniente -->
+  <g data-section-id="upper-poniente" data-rows="12" data-seats-per-row="25" data-price-min="45" data-price-max="110" data-current-price="80" data-available="true">
+    <title>Section Upper Poniente | Upper West</title>
+    <path d="M45 180 L80 170 L80 380 L45 395 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Oriente -->
+  <g data-section-id="upper-oriente" data-rows="12" data-seats-per-row="25" data-price-min="45" data-price-max="110" data-current-price="80" data-available="true">
+    <title>Section Upper Oriente | Upper East</title>
+    <path d="M720 170 L755 180 L755 395 L720 380 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Sur -->
+  <g data-section-id="upper-sur" data-rows="14" data-seats-per-row="32" data-price-min="25" data-price-max="70" data-current-price="50" data-available="true">
+    <title>Section Upper Sur | Upper South</title>
+    <rect x="200" y="440" width="400" height="50" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Upper Norte -->
+  <g data-section-id="upper-norte" data-rows="10" data-seats-per-row="28" data-price-min="30" data-price-max="75" data-current-price="55" data-available="true">
+    <title>Section Upper Norte | Upper North</title>
+    <rect x="210" y="28" width="380" height="45" rx="4" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner NW -->
+  <g data-section-id="corner-nw" data-rows="6" data-seats-per-row="10" data-price-min="50" data-price-max="120" data-current-price="85" data-available="true">
+    <title>Section Corner NW | Corner</title>
+    <path d="M80 100 L210 85 L210 150 L100 165 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner NE -->
+  <g data-section-id="corner-ne" data-rows="6" data-seats-per-row="10" data-price-min="50" data-price-max="120" data-current-price="85" data-available="true">
+    <title>Section Corner NE | Corner</title>
+    <path d="M590 85 L720 100 L700 165 L590 150 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner SW -->
+  <g data-section-id="corner-sw" data-rows="6" data-seats-per-row="10" data-price-min="40" data-price-max="100" data-current-price="70" data-available="true">
+    <title>Section Corner SW | Corner</title>
+    <path d="M100 380 L210 365 L210 440 L110 440 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+
+  <!-- Corner SE -->
+  <g data-section-id="corner-se" data-rows="6" data-seats-per-row="10" data-price-min="40" data-price-max="100" data-current-price="70" data-available="true">
+    <title>Section Corner SE | Corner</title>
+    <path d="M590 365 L700 380 L690 440 L590 440 Z" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/>
+  </g>
+</svg>
