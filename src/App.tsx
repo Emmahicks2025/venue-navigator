@@ -12,7 +12,6 @@ import CheckoutPage from "./pages/CheckoutPage";
 import OrderSuccessPage from "./pages/OrderSuccessPage";
 import SearchPage from "./pages/SearchPage";
 import AdminPage from "./pages/AdminPage";
-import DbEventDetailPage from "./pages/DbEventDetailPage";
 import WorldCupPage from "./pages/WorldCupPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
@@ -31,7 +30,7 @@ const App = () => (
             <Route path="/events/world-cup" element={<WorldCupPage />} />
             <Route path="/events/:category" element={<EventsPage />} />
             <Route path="/event/:id" element={<EventDetailPage />} />
-            <Route path="/match/:id" element={<DbEventDetailPage />} />
+            <Route path="/match/:id" element={<EventDetailPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/order-success" element={<OrderSuccessPage />} />

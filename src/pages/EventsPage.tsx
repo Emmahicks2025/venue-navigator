@@ -1,17 +1,18 @@
 import { useParams } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { EventCard } from '@/components/events/EventCard';
 import { CategoryTabs } from '@/components/events/CategoryTabs';
 import { SearchBar } from '@/components/search/SearchBar';
-import { getEventsByCategory, getCategoryLabel, events } from '@/data/events';
+import { getCategoryLabel } from '@/data/events';
+import { useDbEventsByCategory, mapDbEventToFrontend } from '@/hooks/useDbEvents';
 
 const EventsPage = () => {
   const { category } = useParams<{ category: string }>();
   const currentCategory = category || 'all';
   
-  const filteredEvents = currentCategory === 'all' 
-    ? events 
-    : getEventsByCategory(currentCategory);
+  const { data: dbEvents, isLoading } = useDbEventsByCategory(currentCategory);
+  const filteredEvents = (dbEvents || []).map(mapDbEventToFrontend);
 
   return (
     <Layout>
@@ -24,7 +25,7 @@ const EventsPage = () => {
                 {currentCategory === 'all' ? 'All Events' : getCategoryLabel(currentCategory)}
               </h1>
               <p className="text-muted-foreground">
-                {filteredEvents.length} events available
+                {isLoading ? 'Loading...' : `${filteredEvents.length} events available`}
               </p>
             </div>
             <SearchBar className="w-full lg:w-80" />
@@ -39,7 +40,11 @@ const EventsPage = () => {
       {/* Events Grid */}
       <section className="py-8 lg:py-12">
         <div className="container mx-auto px-4">
-          {filteredEvents.length > 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            </div>
+          ) : filteredEvents.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {filteredEvents.map((event, index) => (
                 <div 

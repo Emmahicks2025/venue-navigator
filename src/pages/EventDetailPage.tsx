@@ -1,18 +1,19 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, Share2, Heart, ChevronLeft, Info, Shield, Ticket, Loader2, X, ChevronDown } from 'lucide-react';
+import { MapPin, Calendar, Clock, Share2, Heart, ChevronLeft, Info, Shield, Ticket, Loader2, Trophy } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { InteractiveSVGMap } from '@/components/venue/InteractiveSVGMap';
 import { TicketList } from '@/components/venue/TicketList';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useCart } from '@/context/CartContext';
-import { getEventById, getVenueByName, formatDate, formatTime, formatPrice, getCategoryLabel } from '@/data/events';
+import { useEventById } from '@/hooks/useDbEvents';
 import { useVenueSVG } from '@/hooks/useVenueSVG';
 import { useTicketmasterImage } from '@/hooks/useTicketmasterImage';
 import { SelectedSeat, VenueSection } from '@/types';
 import { toast } from 'sonner';
 import { getPriceCategory } from '@/lib/svgParser';
+import { formatDate, formatTime, formatPrice, getCategoryLabel } from '@/data/events';
 
 const EventDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,18 +21,18 @@ const EventDetailPage = () => {
   const { addToCart } = useCart();
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
-  const event = getEventById(id || '');
-  const venue = event ? getVenueByName(event.venueName) : undefined;
+  const { data: event, isLoading: eventLoading } = useEventById(id);
   
-  // Load SVG map for the venue - always call hooks unconditionally
-  const { svgContent, sections: svgSections, loading: svgLoading, error: svgError } = useVenueSVG(
-    venue?.svgMapId
+  // Load SVG map for the venue
+  const svgMapName = event?.svg_map_name || event?.venue_name;
+  const { svgContent, sections: svgSections, loading: svgLoading, error: svgError, isFallback } = useVenueSVG(
+    svgMapName || undefined
   );
   
   // Fetch performer image from Ticketmaster if needed
   const { imageUrl: performerImageUrl } = useTicketmasterImage(
     event?.performer || '',
-    event?.performerImage,
+    event?.performer_image || undefined,
     event?.category || 'concerts'
   );
 
@@ -53,6 +54,17 @@ const EventDetailPage = () => {
     }));
   }, [svgSections]);
 
+  if (eventLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center">
+          <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+          <p className="text-muted-foreground">Loading event details...</p>
+        </div>
+      </Layout>
+    );
+  }
+
   if (!event) {
     return (
       <Layout>
@@ -66,13 +78,14 @@ const EventDetailPage = () => {
 
   const selectedSectionData = venueSections.find(s => s.id === selectedSection);
   const selectedSVGSection = svgSections.find(s => s.id === selectedSection);
+  const isWorldCup = event.name.toLowerCase().includes('world cup');
 
   const handleSeatsSelected = (seats: SelectedSeat[], goToCheckout: boolean = false) => {
     addToCart({
       eventId: event.id,
       eventName: event.name,
       eventDate: event.date,
-      venueName: event.venueName,
+      venueName: event.venue_name,
       seats,
     });
     toast.success(`${seats.length} ticket${seats.length > 1 ? 's' : ''} added to cart!`);
@@ -125,17 +138,33 @@ const EventDetailPage = () => {
           <div className="bg-card border border-border rounded-2xl p-4 lg:p-6">
             <div className="flex items-start justify-between gap-4 mb-3">
               <div>
-                <span className="inline-block px-2.5 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full mb-2">
-                  {getCategoryLabel(event.category)}
-                </span>
+                {isWorldCup && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-accent/10 text-accent text-xs font-medium rounded-full mb-2">
+                    <Trophy className="w-3 h-3" />
+                    FIFA World Cup 2026
+                  </span>
+                )}
+                {!isWorldCup && (
+                  <span className="inline-block px-2.5 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full mb-2">
+                    {getCategoryLabel(event.category)}
+                  </span>
+                )}
+                {event.round && (
+                  <span className="inline-block px-2.5 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full mb-2 ml-2">
+                    {event.round}{event.group_name ? ` - Group ${event.group_name}` : ''}
+                  </span>
+                )}
                 <h1 className="font-display text-xl lg:text-2xl font-bold text-foreground mb-1">
-                  {event.name}
+                  {event.home_team && event.away_team 
+                    ? `${event.home_team} vs ${event.away_team}`
+                    : event.name
+                  }
                 </h1>
-                <p className="text-muted-foreground">{event.performer}</p>
+                <p className="text-muted-foreground">{event.description || event.performer}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">Starting from</p>
-                <p className="text-xl font-bold text-accent">{formatPrice(event.minPrice)}</p>
+                <p className="text-xl font-bold text-accent">{formatPrice(event.min_price)}</p>
               </div>
             </div>
 
@@ -150,17 +179,18 @@ const EventDetailPage = () => {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-primary" />
-                <span className="text-sm text-foreground">{event.venueName}</span>
+                <span className="text-sm text-foreground">
+                  {event.venue_name} · {event.venue_city}{event.venue_state ? `, ${event.venue_state}` : ''}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Main Content - Map Always Visible */}
+      {/* Main Content - Map */}
       <section className="pb-8">
         <div className="container mx-auto px-4">
-          {/* Venue Map - Full Width, Always Visible */}
           <div className="bg-card border border-border rounded-2xl p-4 lg:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-lg font-bold text-foreground">Select Your Seats</h2>
@@ -188,22 +218,30 @@ const EventDetailPage = () => {
                 </p>
               </div>
             ) : (
-              <InteractiveSVGMap
-                svgContent={svgContent}
-                sections={svgSections}
-                selectedSection={selectedSection}
-                onSectionSelect={setSelectedSection}
-              />
+              <>
+                {isFallback && (
+                  <div className="mb-3 text-center">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-full text-xs text-muted-foreground">
+                      <Info className="w-3.5 h-3.5" />
+                      Generic stadium layout — actual sections may vary
+                    </span>
+                  </div>
+                )}
+                <InteractiveSVGMap
+                  svgContent={svgContent}
+                  sections={svgSections}
+                  selectedSection={selectedSection}
+                  onSectionSelect={setSelectedSection}
+                />
+              </>
             )}
 
-            {/* Helper Text */}
             <div className="mt-4 text-center">
               <p className="text-sm text-muted-foreground">
                 👆 Tap on a section to view available tickets
               </p>
             </div>
 
-            {/* Quick Stats */}
             <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-border">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Shield className="w-3.5 h-3.5 text-success" />
@@ -238,6 +276,12 @@ const EventDetailPage = () => {
               svgSection={selectedSVGSection}
               onTicketsSelected={handleSeatsSelected}
               onClose={handleCloseTickets}
+              matchCategory={{
+                round: event.round,
+                groupName: event.group_name,
+                matchNumber: event.match_number,
+                isWorldCup,
+              }}
             />
           )}
         </SheetContent>
