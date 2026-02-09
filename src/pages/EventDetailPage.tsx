@@ -24,7 +24,7 @@ const EventDetailPage = () => {
   const { data: event, isLoading: eventLoading } = useEventById(id);
   
   // Load SVG map for the venue
-  const svgMapName = event?.svg_map_name || event?.venue_name;
+  const svgMapName = event?.svg_map_name || undefined;
   const { svgContent, sections: svgSections, loading: svgLoading, error: svgError, isFallback } = useVenueSVG(
     svgMapName || undefined
   );
