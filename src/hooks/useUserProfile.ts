@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useAuth } from './useAuth';
 
 export interface UserProfile {
@@ -17,14 +18,9 @@ export function useUserProfile() {
     queryKey: ['user-profile', user?.uid],
     queryFn: async () => {
       if (!user) return null;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, user_id, email, first_name, last_name')
-        .eq('user_id', user.uid)
-        .single();
-
-      if (error) throw error;
-      return data as UserProfile;
+      const docSnap = await getDoc(doc(db, 'profiles', user.uid));
+      if (!docSnap.exists()) return null;
+      return { id: docSnap.id, ...docSnap.data() } as UserProfile;
     },
     enabled: !!user,
   });

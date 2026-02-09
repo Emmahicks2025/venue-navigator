@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { useCart } from '@/context/CartContext';
 import { formatPrice, formatDate } from '@/data/events';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Loader2 } from 'lucide-react';
@@ -32,7 +33,6 @@ const CheckoutPage = () => {
     zipCode: '',
   });
 
-  // Auto-fill from user profile when it loads
   useEffect(() => {
     if (user || profile) {
       setFormData(prev => ({
@@ -48,7 +48,6 @@ const CheckoutPage = () => {
   const serviceFee = totalPrice * 0.1;
   const grandTotal = totalPrice + serviceFee;
 
-  // Redirect to auth if not logged in
   if (!authLoading && !user) {
     navigate('/auth?redirect=/checkout');
     return null;
@@ -81,65 +80,61 @@ const CheckoutPage = () => {
     setIsProcessing(true);
 
     try {
-      // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       const orderNumber = `TO${Date.now().toString().slice(-8)}`;
 
       if (user) {
-        // Create order in database
-        const { data: order, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            user_id: user.uid,
-            order_number: orderNumber,
-            status: 'confirmed',
-            subtotal: totalPrice,
-            service_fee: serviceFee,
-            total: grandTotal,
-            billing_email: formData.email,
-            billing_first_name: formData.firstName,
-            billing_last_name: formData.lastName,
-            billing_address: formData.billingAddress,
-            billing_city: formData.city,
-            billing_zip: formData.zipCode,
-          })
-          .select()
-          .single();
+        // Create order in Firestore
+        const orderRef = await addDoc(collection(db, 'orders'), {
+          user_id: user.uid,
+          order_number: orderNumber,
+          status: 'confirmed',
+          subtotal: totalPrice,
+          service_fee: serviceFee,
+          total: grandTotal,
+          billing_email: formData.email,
+          billing_first_name: formData.firstName,
+          billing_last_name: formData.lastName,
+          billing_address: formData.billingAddress,
+          billing_city: formData.city,
+          billing_zip: formData.zipCode,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
 
-        if (orderError) throw orderError;
+        // Create tickets for each seat
+        for (const item of items) {
+          for (const seat of item.seats) {
+            await addDoc(collection(db, 'tickets'), {
+              order_id: orderRef.id,
+              user_id: user.uid,
+              event_id: item.eventId,
+              event_name: item.eventName,
+              event_date: item.eventDate,
+              event_time: '19:00',
+              venue_name: item.venueName,
+              performer: item.performer || null,
+              performer_image: item.performerImage || null,
+              section_name: seat.sectionName,
+              row_name: seat.row,
+              seat_number: seat.seatNumber,
+              price: seat.price,
+              status: 'active',
+              barcode: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          }
+        }
 
-        // Create tickets for each seat in each cart item
-        const ticketInserts = items.flatMap((item) =>
-          item.seats.map((seat) => ({
-            order_id: order.id,
-            user_id: user.uid,
-            event_id: item.eventId,
-            event_name: item.eventName,
-            event_date: item.eventDate,
-            venue_name: item.venueName,
-            performer: item.performer || null,
-            performer_image: item.performerImage || null,
-            section_name: seat.sectionName,
-            row_name: seat.row,
-            seat_number: seat.seatNumber,
-            price: seat.price,
-            status: 'active',
-          }))
-        );
-
-        const { error: ticketsError } = await supabase
-          .from('tickets')
-          .insert(ticketInserts);
-
-        if (ticketsError) throw ticketsError;
-
-        // Also update profile name if it was empty
+        // Update profile name if empty
         if (profile && !profile.first_name && formData.firstName) {
-          await supabase
-            .from('profiles')
-            .update({ first_name: formData.firstName, last_name: formData.lastName })
-            .eq('user_id', user.uid);
+          await updateDoc(doc(db, 'profiles', user.uid), {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            updated_at: new Date().toISOString(),
+          });
         }
       }
 
