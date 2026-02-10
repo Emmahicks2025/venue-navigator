@@ -24,6 +24,7 @@ import HelpPage from "./pages/HelpPage";
 import SellTicketsPage from "./pages/SellTicketsPage";
 import NotFound from "./pages/NotFound";
 import { CookieConsent } from "./components/layout/CookieConsent";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/events/world-cup" element={<WorldCupPage />} />
