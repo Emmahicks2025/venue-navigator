@@ -133,16 +133,27 @@ export const UsersManager = () => {
   };
 
   const handleDeleteUser = async (userId: string, docId: string) => {
-    if (!confirm('Delete this user profile? This will not delete their auth account or orders.')) return;
+    if (!confirm('Delete this user completely? This will remove their profile AND auth account.')) return;
     setDeleting(true);
     try {
+      // Delete Firebase Auth account via edge function
+      const { error: fnError } = await supabase.functions.invoke('delete-firebase-user', {
+        body: { uid: userId },
+      });
+      if (fnError) {
+        console.error('Failed to delete auth account:', fnError);
+        toast.error('Failed to delete auth account, but will remove profile');
+      }
+      // Delete Firestore profile
       await deleteDoc(doc(db, 'profiles', docId));
+      // Also delete user_roles if exists
+      try { await deleteDoc(doc(db, 'user_roles', userId)); } catch {}
       setUsers(prev => prev.filter(u => u.id !== docId));
       if (selectedUser?.id === docId) setSelectedUser(null);
-      toast.success('User profile deleted');
+      toast.success('User fully deleted (profile + auth)');
     } catch (err) {
       console.error('Failed to delete:', err);
-      toast.error('Failed to delete profile');
+      toast.error('Failed to delete user');
     } finally {
       setDeleting(false);
     }
@@ -150,18 +161,30 @@ export const UsersManager = () => {
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Delete ${selectedIds.size} user profile(s)? This cannot be undone.`)) return;
+    if (!confirm(`Fully delete ${selectedIds.size} user(s)? This removes profiles AND auth accounts. Cannot be undone.`)) return;
     setDeleting(true);
     try {
+      const selectedUsers = users.filter(u => selectedIds.has(u.id));
+      const userIds = selectedUsers.map(u => u.user_id);
+      
+      // Bulk delete Firebase Auth accounts
+      await supabase.functions.invoke('delete-firebase-user', {
+        body: { uids: userIds },
+      });
+      
+      // Delete Firestore profiles and roles
       await Promise.all(
-        Array.from(selectedIds).map(id => deleteDoc(doc(db, 'profiles', id)))
+        selectedUsers.flatMap(u => [
+          deleteDoc(doc(db, 'profiles', u.id)),
+          deleteDoc(doc(db, 'user_roles', u.user_id)).catch(() => {}),
+        ])
       );
       setUsers(prev => prev.filter(u => !selectedIds.has(u.id)));
       setSelectedIds(new Set());
-      toast.success(`${selectedIds.size} profile(s) deleted`);
+      toast.success(`${selectedIds.size} user(s) fully deleted`);
     } catch (err) {
       console.error('Bulk delete failed:', err);
-      toast.error('Failed to delete some profiles');
+      toast.error('Failed to delete some users');
     } finally {
       setDeleting(false);
     }
