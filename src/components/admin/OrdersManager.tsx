@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, orderBy, getDocs, doc, updateDoc, where } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc, where, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,10 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Search, Eye, RefreshCw, DollarSign, ShoppingCart, AlertTriangle, CheckCircle, XCircle, Clock, Package, Save, MessageSquare } from 'lucide-react';
+import { Loader2, Search, Eye, RefreshCw, DollarSign, ShoppingCart, AlertTriangle, CheckCircle, XCircle, Clock, Package, Save, MessageSquare, Trash2, Send, User, Mail, Edit } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { formatPrice } from '@/data/events';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OrderData {
   id: string;
@@ -47,6 +48,15 @@ interface TicketData {
   remarks: string | null;
 }
 
+interface UserProfile {
+  id: string;
+  user_id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  created_at: string;
+}
+
 const STATUS_OPTIONS = ['confirmed', 'pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded', 'abandoned'];
 
 const statusConfig: Record<string, { icon: React.ElementType; color: string }> = {
@@ -72,6 +82,36 @@ export const OrdersManager = () => {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [editingRemarks, setEditingRemarks] = useState('');
   const [savingRemarks, setSavingRemarks] = useState(false);
+
+  // User profile state
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  // Edit billing state
+  const [editingBilling, setEditingBilling] = useState(false);
+  const [billingForm, setBillingForm] = useState({
+    billing_first_name: '',
+    billing_last_name: '',
+    billing_email: '',
+    billing_address: '',
+    billing_city: '',
+    billing_zip: '',
+  });
+  const [savingBilling, setSavingBilling] = useState(false);
+
+  // Edit user profile state
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({ first_name: '', last_name: '', email: '' });
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Email compose state
+  const [emailDialog, setEmailDialog] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  // Delete state
+  const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -110,10 +150,44 @@ export const OrdersManager = () => {
     }
   };
 
+  const fetchUserProfile = async (userId: string) => {
+    setLoadingProfile(true);
+    setUserProfile(null);
+    try {
+      const q = query(collection(db, 'profiles'), where('user_id', '==', userId));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const d = snap.docs[0];
+        const profile = { id: d.id, ...d.data() } as UserProfile;
+        setUserProfile(profile);
+        setProfileForm({
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
+          email: profile.email || '',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch user profile:', err);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
   const handleViewOrder = (order: OrderData) => {
     setSelectedOrder(order);
     setEditingRemarks(order.remarks || '');
+    setEditingBilling(false);
+    setEditingProfile(false);
+    setBillingForm({
+      billing_first_name: order.billing_first_name || '',
+      billing_last_name: order.billing_last_name || '',
+      billing_email: order.billing_email || '',
+      billing_address: order.billing_address || '',
+      billing_city: order.billing_city || '',
+      billing_zip: order.billing_zip || '',
+    });
     fetchOrderTickets(order.id);
+    fetchUserProfile(order.user_id);
   };
 
   const handleSaveRemarks = async () => {
@@ -150,6 +224,111 @@ export const OrdersManager = () => {
     }
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) return;
+    setDeletingOrder(orderId);
+    try {
+      // Delete associated tickets first
+      const ticketsQ = query(collection(db, 'tickets'), where('order_id', '==', orderId));
+      const ticketsSnap = await getDocs(ticketsQ);
+      await Promise.all(ticketsSnap.docs.map(d => deleteDoc(doc(db, 'tickets', d.id))));
+      
+      // Delete the order
+      await deleteDoc(doc(db, 'orders', orderId));
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      if (selectedOrder?.id === orderId) setSelectedOrder(null);
+      toast.success('Order and associated tickets deleted');
+    } catch (err) {
+      console.error('Failed to delete order:', err);
+      toast.error('Failed to delete order');
+    } finally {
+      setDeletingOrder(null);
+    }
+  };
+
+  const handleSaveBilling = async () => {
+    if (!selectedOrder) return;
+    setSavingBilling(true);
+    try {
+      await updateDoc(doc(db, 'orders', selectedOrder.id), {
+        ...billingForm,
+        updated_at: new Date().toISOString(),
+      });
+      const updated = { ...selectedOrder, ...billingForm };
+      setOrders(prev => prev.map(o => o.id === selectedOrder.id ? updated : o));
+      setSelectedOrder(updated);
+      setEditingBilling(false);
+      toast.success('Billing details updated');
+    } catch (err) {
+      console.error('Failed to save billing:', err);
+      toast.error('Failed to save billing details');
+    } finally {
+      setSavingBilling(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!userProfile) return;
+    setSavingProfile(true);
+    try {
+      await updateDoc(doc(db, 'profiles', userProfile.id), {
+        first_name: profileForm.first_name || null,
+        last_name: profileForm.last_name || null,
+        email: profileForm.email || null,
+        updated_at: new Date().toISOString(),
+      });
+      setUserProfile(prev => prev ? { ...prev, ...profileForm } : null);
+      setEditingProfile(false);
+      toast.success('User profile updated');
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      toast.error('Failed to update user profile');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!selectedOrder?.billing_email || !emailSubject.trim() || !emailBody.trim()) {
+      toast.error('Subject and message body are required');
+      return;
+    }
+    setSendingEmail(true);
+    try {
+      // Convert newlines to <br> and wrap paragraphs
+      const htmlBody = emailBody
+        .split('\n\n')
+        .map(p => `<p style="margin:0 0 12px;">${p.replace(/\n/g, '<br>')}</p>`)
+        .join('');
+
+      const { data, error } = await supabase.functions.invoke('send-admin-email', {
+        body: {
+          to: selectedOrder.billing_email,
+          subject: emailSubject,
+          body: htmlBody,
+          recipientName: `${selectedOrder.billing_first_name || ''} ${selectedOrder.billing_last_name || ''}`.trim() || undefined,
+        },
+      });
+
+      if (error) throw error;
+      toast.success(`Email sent to ${selectedOrder.billing_email}`);
+      setEmailDialog(false);
+      setEmailSubject('');
+      setEmailBody('');
+    } catch (err) {
+      console.error('Failed to send email:', err);
+      toast.error('Failed to send email');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const openEmailDialog = () => {
+    setEmailSubject('');
+    setEmailBody('');
+    setEmailDialog(true);
+  };
+
   const filtered = useMemo(() => {
     let result = [...orders];
 
@@ -184,7 +363,6 @@ export const OrdersManager = () => {
     return result;
   }, [orders, statusFilter, searchTerm, sortBy]);
 
-  // Stats
   const stats = useMemo(() => {
     const total = orders.length;
     const confirmed = orders.filter(o => o.status === 'confirmed' || o.status === 'delivered').length;
@@ -284,8 +462,8 @@ export const OrdersManager = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
+                    <div className="flex items-center gap-2">
+                      <div className="text-right mr-2">
                         <p className="font-bold text-accent">{formatPrice(order.total)}</p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -307,6 +485,15 @@ export const OrdersManager = () => {
                       </Select>
                       <Button variant="ghost" size="sm" onClick={() => handleViewOrder(order)}>
                         <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteOrder(order.id)}
+                        disabled={deletingOrder === order.id}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        {deletingOrder === order.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </Button>
                     </div>
                   </div>
@@ -332,16 +519,89 @@ export const OrdersManager = () => {
               </DialogHeader>
 
               <div className="space-y-5">
-                {/* Customer Info */}
+                {/* User Profile Section */}
                 <div>
-                  <h4 className="text-sm font-semibold text-foreground mb-2">Customer Information</h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <DetailRow label="Name" value={`${selectedOrder.billing_first_name || ''} ${selectedOrder.billing_last_name || ''}`.trim() || '—'} />
-                    <DetailRow label="Email" value={selectedOrder.billing_email || '—'} />
-                    <DetailRow label="Address" value={selectedOrder.billing_address || '—'} />
-                    <DetailRow label="City / ZIP" value={`${selectedOrder.billing_city || ''} ${selectedOrder.billing_zip || ''}`.trim() || '—'} />
-                    <DetailRow label="User ID" value={selectedOrder.user_id} mono />
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                      <User className="w-4 h-4" />
+                      User Profile
+                    </h4>
+                    {userProfile && (
+                      <Button variant="ghost" size="sm" onClick={() => setEditingProfile(!editingProfile)} className="h-7 text-xs gap-1">
+                        <Edit className="w-3 h-3" />
+                        {editingProfile ? 'Cancel' : 'Edit'}
+                      </Button>
+                    )}
                   </div>
+                  {loadingProfile ? (
+                    <div className="flex items-center gap-2 py-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">Loading profile...</span>
+                    </div>
+                  ) : userProfile ? (
+                    editingProfile ? (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input placeholder="First Name" value={profileForm.first_name} onChange={e => setProfileForm(p => ({ ...p, first_name: e.target.value }))} className="h-8 text-sm" />
+                          <Input placeholder="Last Name" value={profileForm.last_name} onChange={e => setProfileForm(p => ({ ...p, last_name: e.target.value }))} className="h-8 text-sm" />
+                        </div>
+                        <Input placeholder="Email" value={profileForm.email} onChange={e => setProfileForm(p => ({ ...p, email: e.target.value }))} className="h-8 text-sm" />
+                        <Button size="sm" onClick={handleSaveProfile} disabled={savingProfile} className="gap-1.5 h-7 text-xs">
+                          {savingProfile ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                          Save Profile
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="bg-secondary/50 border border-border rounded-lg p-3 text-sm">
+                        <div className="grid grid-cols-2 gap-2">
+                          <DetailRow label="Name" value={`${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || '—'} />
+                          <DetailRow label="Email" value={userProfile.email || '—'} />
+                          <DetailRow label="User ID" value={userProfile.user_id} mono />
+                          <DetailRow label="Joined" value={new Date(userProfile.created_at).toLocaleDateString()} />
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No profile found for this user</p>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Billing Info (Editable) */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-semibold text-foreground">Billing Information</h4>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingBilling(!editingBilling)} className="h-7 text-xs gap-1">
+                      <Edit className="w-3 h-3" />
+                      {editingBilling ? 'Cancel' : 'Edit'}
+                    </Button>
+                  </div>
+                  {editingBilling ? (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input placeholder="First Name" value={billingForm.billing_first_name} onChange={e => setBillingForm(p => ({ ...p, billing_first_name: e.target.value }))} className="h-8 text-sm" />
+                        <Input placeholder="Last Name" value={billingForm.billing_last_name} onChange={e => setBillingForm(p => ({ ...p, billing_last_name: e.target.value }))} className="h-8 text-sm" />
+                      </div>
+                      <Input placeholder="Email" value={billingForm.billing_email} onChange={e => setBillingForm(p => ({ ...p, billing_email: e.target.value }))} className="h-8 text-sm" />
+                      <Input placeholder="Address" value={billingForm.billing_address} onChange={e => setBillingForm(p => ({ ...p, billing_address: e.target.value }))} className="h-8 text-sm" />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input placeholder="City" value={billingForm.billing_city} onChange={e => setBillingForm(p => ({ ...p, billing_city: e.target.value }))} className="h-8 text-sm" />
+                        <Input placeholder="ZIP" value={billingForm.billing_zip} onChange={e => setBillingForm(p => ({ ...p, billing_zip: e.target.value }))} className="h-8 text-sm" />
+                      </div>
+                      <Button size="sm" onClick={handleSaveBilling} disabled={savingBilling} className="gap-1.5 h-7 text-xs">
+                        {savingBilling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                        Save Billing
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <DetailRow label="Name" value={`${selectedOrder.billing_first_name || ''} ${selectedOrder.billing_last_name || ''}`.trim() || '—'} />
+                      <DetailRow label="Email" value={selectedOrder.billing_email || '—'} />
+                      <DetailRow label="Address" value={selectedOrder.billing_address || '—'} />
+                      <DetailRow label="City / ZIP" value={`${selectedOrder.billing_city || ''} ${selectedOrder.billing_zip || ''}`.trim() || '—'} />
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
@@ -368,7 +628,7 @@ export const OrdersManager = () => {
 
                 <Separator />
 
-                {/* Order Timeline */}
+                {/* Order Date */}
                 <div>
                   <h4 className="text-sm font-semibold text-foreground mb-2">Order Date</h4>
                   <p className="text-sm text-muted-foreground">
@@ -409,10 +669,10 @@ export const OrdersManager = () => {
                     Order Remarks / Instructions
                   </h4>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Add notes or delivery instructions for this order. These will be shared with the customer when they inquire via chat.
+                    Add notes or delivery instructions for this order.
                   </p>
                   <Textarea
-                    placeholder="e.g. Tickets will be emailed 24 hours before the event. Please check your spam folder."
+                    placeholder="e.g. Tickets will be emailed 24 hours before the event."
                     value={editingRemarks}
                     onChange={e => setEditingRemarks(e.target.value)}
                     rows={3}
@@ -430,6 +690,31 @@ export const OrdersManager = () => {
                 </div>
 
                 <Separator />
+
+                {/* Send Email */}
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                    <Mail className="w-4 h-4" />
+                    Send Email to Customer
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Send a branded email to {selectedOrder.billing_email || 'this customer'}.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={openEmailDialog}
+                    disabled={!selectedOrder.billing_email}
+                    className="gap-1.5"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Compose Email
+                  </Button>
+                </div>
+
+                <Separator />
+
+                {/* Tickets */}
                 <div>
                   <h4 className="text-sm font-semibold text-foreground mb-2">
                     Tickets ({loadingTickets ? '...' : orderTickets.length})
@@ -473,9 +758,77 @@ export const OrdersManager = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Delete Order */}
+                <Separator />
+                <div className="flex justify-end">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDeleteOrder(selectedOrder.id)}
+                    disabled={deletingOrder === selectedOrder.id}
+                    className="gap-1.5"
+                  >
+                    {deletingOrder === selectedOrder.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                    Delete Order
+                  </Button>
+                </div>
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Compose Dialog */}
+      <Dialog open={emailDialog} onOpenChange={setEmailDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-primary" />
+              Send Email
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">To</p>
+              <p className="text-sm text-foreground font-medium">
+                {selectedOrder?.billing_first_name} {selectedOrder?.billing_last_name} &lt;{selectedOrder?.billing_email}&gt;
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Subject</p>
+              <Input
+                placeholder="e.g. Update regarding your order..."
+                value={emailSubject}
+                onChange={e => setEmailSubject(e.target.value)}
+              />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Message</p>
+              <p className="text-[10px] text-muted-foreground mb-1">
+                Use blank lines for paragraphs. The email will include TixOrbit branding, logo, and footer automatically.
+              </p>
+              <Textarea
+                placeholder="Type your message here...&#10;&#10;Use blank lines to separate paragraphs.&#10;&#10;**Bold text** and basic formatting is supported."
+                value={emailBody}
+                onChange={e => setEmailBody(e.target.value)}
+                rows={8}
+                className="resize-none text-sm"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setEmailDialog(false)}>Cancel</Button>
+              <Button
+                size="sm"
+                onClick={handleSendEmail}
+                disabled={sendingEmail || !emailSubject.trim() || !emailBody.trim()}
+                className="gap-1.5"
+              >
+                {sendingEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                Send Email
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
