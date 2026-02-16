@@ -25,7 +25,7 @@ const AuthPage = () => {
   const [newUserId, setNewUserId] = useState('');
   const [sendingCode, setSendingCode] = useState(false);
   const isSigningUp = useRef(false);
-  const { user, loading, signIn, signUp, sendPhoneVerification, verifyPhoneCode } = useAuth();
+  const { user, loading, signIn, signUp, sendPhoneVerification, verifyPhoneCode, deleteUnverifiedUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -67,9 +67,12 @@ const AuthPage = () => {
     setSubmitting(true);
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        const { error, unverified } = await signIn(email, password);
         if (error) {
-          if (error.message.includes('Invalid login')) {
+          if (unverified) {
+            toast.error('Your phone is not verified. Please sign up again.');
+            setIsLogin(false);
+          } else if (error.message.includes('Invalid login')) {
             toast.error('Invalid email or password');
           } else {
             toast.error(error.message);
@@ -101,10 +104,11 @@ const AuthPage = () => {
           setSendingCode(false);
 
           if (phoneError) {
+            // Delete the unverified account so they can try again
+            await deleteUnverifiedUser(newUser);
             isSigningUp.current = false;
-            toast.error('Account created but phone verification failed: ' + phoneError.message);
+            toast.error('Phone verification failed. Your account was not created. Please try again.');
             setSignupStep('form');
-            setIsLogin(true);
             return;
           }
 
