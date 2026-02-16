@@ -23,6 +23,7 @@ import PrivacyPage from "./pages/PrivacyPage";
 import HelpPage from "./pages/HelpPage";
 import SellTicketsPage from "./pages/SellTicketsPage";
 import NotFound from "./pages/NotFound";
+import EmailPreviewPage from "./pages/EmailPreviewPage";
 import { CookieConsent } from "./components/layout/CookieConsent";
 import { ScrollToTop } from "./components/ScrollToTop";
 
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/help" element={<HelpPage />} />
             <Route path="/sell" element={<SellTicketsPage />} />
+            <Route path="/email-preview" element={<EmailPreviewPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ChatWidget />
