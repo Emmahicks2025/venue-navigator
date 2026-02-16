@@ -8,10 +8,9 @@ import {
   PhoneAuthProvider,
   RecaptchaVerifier,
   linkWithCredential,
-  PhoneMultiFactorGenerator,
-  multiFactor,
+  deleteUser,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
 export function useAuth() {
@@ -43,12 +42,34 @@ export function useAuth() {
     }
   };
 
+  /** Check if a user's phone is verified */
+  const isPhoneVerified = async (userId: string): Promise<boolean> => {
+    try {
+      const profileDoc = await getDoc(doc(db, 'profiles', userId));
+      return profileDoc.exists() && profileDoc.data()?.phone_verified === true;
+    } catch {
+      return false;
+    }
+  };
+
   const signIn = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      return { error: null };
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Check phone verification status
+      const verified = await isPhoneVerified(cred.user.uid);
+      if (!verified) {
+        // Sign out the unverified user
+        await firebaseSignOut(auth);
+        return { 
+          error: { message: 'Your phone number has not been verified. Please sign up again to complete verification.' },
+          unverified: true,
+        };
+      }
+      
+      return { error: null, unverified: false };
     } catch (err: any) {
-      return { error: { message: err.message || 'Sign in failed' } };
+      return { error: { message: err.message || 'Sign in failed' }, unverified: false };
     }
   };
 
@@ -73,6 +94,20 @@ export function useAuth() {
     }
   };
 
+  /** Delete a newly created user account (used when OTP verification fails) */
+  const deleteUnverifiedUser = async (firebaseUser?: User) => {
+    const targetUser = firebaseUser || auth.currentUser;
+    if (!targetUser) return;
+    try {
+      // Delete Firestore profile
+      await deleteDoc(doc(db, 'profiles', targetUser.uid));
+      // Delete Firebase auth account
+      await deleteUser(targetUser);
+    } catch (err) {
+      console.error('Failed to clean up unverified user:', err);
+    }
+  };
+
   // Store recaptcha verifier to avoid duplicate rendering
   let recaptchaVerifierInstance: RecaptchaVerifier | null = null;
 
@@ -83,7 +118,6 @@ export function useAuth() {
         recaptchaVerifierInstance.clear();
         recaptchaVerifierInstance = null;
       }
-      // Clear the container element
       const container = document.getElementById(recaptchaContainerId);
       if (container) container.innerHTML = '';
 
@@ -94,7 +128,6 @@ export function useAuth() {
       const verificationId = await provider.verifyPhoneNumber(phoneNumber, recaptchaVerifierInstance);
       return { verificationId, error: null };
     } catch (err: any) {
-      // Clean up on error too
       if (recaptchaVerifierInstance) {
         try { recaptchaVerifierInstance.clear(); } catch {}
         recaptchaVerifierInstance = null;
@@ -106,12 +139,11 @@ export function useAuth() {
   const verifyPhoneCode = async (verificationId: string, code: string, userId: string) => {
     try {
       const credential = PhoneAuthProvider.credential(verificationId, code);
-      // Link phone credential to the current user
       const currentUser = auth.currentUser;
       if (currentUser) {
         await linkWithCredential(currentUser, credential);
       }
-      // Update profile as verified
+      // Mark phone as verified
       await setDoc(doc(db, 'profiles', userId), { phone_verified: true, updated_at: new Date().toISOString() }, { merge: true });
       return { error: null };
     } catch (err: any) {
@@ -126,5 +158,5 @@ export function useAuth() {
 
   const session = user ? { user } : null;
 
-  return { user, session, loading, isAdmin, signIn, signUp, signOut, sendPhoneVerification, verifyPhoneCode };
+  return { user, session, loading, isAdmin, signIn, signUp, signOut, sendPhoneVerification, verifyPhoneCode, deleteUnverifiedUser };
 }
