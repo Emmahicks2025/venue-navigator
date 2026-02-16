@@ -17,6 +17,8 @@ import { Plus, Pencil, Trash2, Search, Calendar, MapPin, DollarSign, ChevronsUpD
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { formatPrice, formatDate } from '@/data/events';
+import { useVenueSVG } from '@/hooks/useVenueSVG';
+import { generateSectionPricesFromEventRange, saveEventPricingOverrides } from '@/hooks/useEventPricing';
 
 interface Event {
   id: string;
@@ -253,6 +255,9 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
   const [svgMapOpen, setSvgMapOpen] = useState(false);
   const venueMaps = useMemo(() => [...venueNames].sort(), []);
 
+  // Load SVG sections for the selected venue map (to generate per-section pricing)
+  const { sections: svgSections } = useVenueSVG(formData.svg_map_name || undefined);
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const eventData = {
@@ -269,13 +274,26 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
         updated_at: new Date().toISOString(),
       };
 
-      if (event?.id) {
-        await updateDoc(doc(db, 'events', event.id), eventData);
+      let eventId = event?.id;
+
+      if (eventId) {
+        await updateDoc(doc(db, 'events', eventId), eventData);
       } else {
-        await addDoc(collection(db, 'events'), {
+        const newDoc = await addDoc(collection(db, 'events'), {
           ...eventData,
           created_at: new Date().toISOString(),
         });
+        eventId = newDoc.id;
+      }
+
+      // Save per-event section pricing overrides if we have SVG sections and prices
+      if (eventId && svgSections.length > 0 && formData.min_price > 0 && formData.max_price > 0) {
+        const sectionPrices = generateSectionPricesFromEventRange(
+          svgSections,
+          formData.min_price,
+          formData.max_price
+        );
+        await saveEventPricingOverrides(eventId, sectionPrices);
       }
     },
     onSuccess: () => {

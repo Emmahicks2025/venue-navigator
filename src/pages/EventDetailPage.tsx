@@ -11,6 +11,7 @@ import { useCart } from '@/context/CartContext';
 import { useEventById } from '@/hooks/useDbEvents';
 import { useVenueSVG } from '@/hooks/useVenueSVG';
 import { useTicketmasterImage } from '@/hooks/useTicketmasterImage';
+import { useEventPricing, applySectionOverrides } from '@/hooks/useEventPricing';
 import { SelectedSeat, VenueSection } from '@/types';
 import { toast } from 'sonner';
 import { getPriceCategory } from '@/lib/svgParser';
@@ -28,8 +29,17 @@ const EventDetailPage = () => {
   
   // Load SVG map for the venue
   const svgMapName = event?.svg_map_name || undefined;
-  const { svgContent, sections: svgSections, loading: svgLoading, error: svgError, isFallback } = useVenueSVG(
+  const { svgContent, sections: rawSvgSections, loading: svgLoading, error: svgError, isFallback } = useVenueSVG(
     svgMapName || undefined
+  );
+
+  // Load per-event pricing overrides
+  const { overrides: pricingOverrides } = useEventPricing(event?.id);
+
+  // Merge SVG sections with event-specific pricing overrides
+  const svgSections = useMemo(
+    () => applySectionOverrides(rawSvgSections, pricingOverrides),
+    [rawSvgSections, pricingOverrides]
   );
   
   // Fetch performer image from Ticketmaster if needed
