@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.delete-firebase-user]
 verify_jwt = false
+
+[functions.list-firebase-users]
+verify_jwt = false
