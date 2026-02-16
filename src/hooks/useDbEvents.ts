@@ -26,6 +26,7 @@ export interface DbEvent {
   away_team: string | null;
   ticket_url: string | null;
   source: string | null;
+  event_svg_content: string | null;
 }
 
 /** Map a DB event row to the frontend Event type used by EventCard etc. */

@@ -28,20 +28,20 @@ const EventDetailPage = () => {
   const { data: event, isLoading: eventLoading } = useEventById(id);
   
   // Use per-event SVG copy if available (has baked-in pricing), otherwise shared venue SVG
-  const hasEventSvg = !!(event as any)?.event_svg_content;
+  const hasEventSvg = !!event?.event_svg_content;
   const svgMapName = event?.svg_map_name || undefined;
   const { svgContent: sharedSvgContent, sections: sharedSections, loading: svgLoading, error: svgError, isFallback } = useVenueSVG(
     hasEventSvg ? undefined : svgMapName
   );
 
   // If event has its own SVG copy, parse sections from it
-  const svgContent = hasEventSvg ? (event as any).event_svg_content : sharedSvgContent;
+  const svgContent = hasEventSvg ? event.event_svg_content : sharedSvgContent;
   const svgSections = useMemo(() => {
-    if (hasEventSvg && (event as any).event_svg_content) {
-      return parseSVGSections((event as any).event_svg_content);
+    if (hasEventSvg && event?.event_svg_content) {
+      return parseSVGSections(event.event_svg_content);
     }
     return sharedSections;
-  }, [hasEventSvg, (event as any)?.event_svg_content, sharedSections]);
+  }, [hasEventSvg, event?.event_svg_content, sharedSections]);
   
   // Fetch performer image from Ticketmaster if needed
   const { imageUrl: performerImageUrl } = useTicketmasterImage(
