@@ -288,12 +288,17 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
 
       // Save per-event section pricing overrides if we have SVG sections and prices
       if (eventId && svgSections.length > 0 && formData.min_price > 0 && formData.max_price > 0) {
+        console.log(`[EventPricing] Generating prices for ${svgSections.length} sections, range $${formData.min_price}-$${formData.max_price}`);
         const sectionPrices = generateSectionPricesFromEventRange(
           svgSections,
           formData.min_price,
           formData.max_price
         );
+        console.log('[EventPricing] Section prices:', JSON.stringify(sectionPrices.slice(0, 5)));
         await saveEventPricingOverrides(eventId, sectionPrices);
+        console.log('[EventPricing] Overrides saved to Firestore');
+      } else {
+        console.warn('[EventPricing] Skipped pricing — sections:', svgSections.length, 'min:', formData.min_price, 'max:', formData.max_price);
       }
     },
     onSuccess: () => {
