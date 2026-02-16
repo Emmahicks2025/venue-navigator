@@ -9,7 +9,8 @@ import { FifaEventsManager } from '@/components/admin/FifaEventsManager';
 import { LiveChatManager } from '@/components/admin/LiveChatManager';
 import { TicketRemarksManager } from '@/components/admin/TicketRemarksManager';
 import { OrdersManager } from '@/components/admin/OrdersManager';
-import { Calendar, Map, Loader2, ShieldAlert, Trophy, MessageCircle, Ticket, ShoppingCart } from 'lucide-react';
+import { UsersManager } from '@/components/admin/UsersManager';
+import { Calendar, Map, Loader2, ShieldAlert, Trophy, MessageCircle, Ticket, ShoppingCart, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const AdminPage = () => {
@@ -55,7 +56,7 @@ const AdminPage = () => {
         </div>
 
         <Tabs defaultValue="events" className="space-y-6">
-          <TabsList className="grid w-full max-w-4xl grid-cols-6">
+          <TabsList className="grid w-full max-w-5xl grid-cols-7">
             <TabsTrigger value="events" className="gap-2">
               <Calendar className="w-4 h-4" />
               Events
@@ -71,6 +72,10 @@ const AdminPage = () => {
             <TabsTrigger value="orders" className="gap-2">
               <ShoppingCart className="w-4 h-4" />
               Orders
+            </TabsTrigger>
+            <TabsTrigger value="users" className="gap-2">
+              <Users className="w-4 h-4" />
+              Users
             </TabsTrigger>
             <TabsTrigger value="tickets" className="gap-2">
               <Ticket className="w-4 h-4" />
@@ -99,6 +104,10 @@ const AdminPage = () => {
 
           <TabsContent value="orders">
             <OrdersManager />
+          </TabsContent>
+
+          <TabsContent value="users">
+            <UsersManager />
           </TabsContent>
 
           <TabsContent value="tickets">
