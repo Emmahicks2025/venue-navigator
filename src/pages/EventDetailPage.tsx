@@ -12,6 +12,7 @@ import { useEventById } from '@/hooks/useDbEvents';
 import { useVenueSVG } from '@/hooks/useVenueSVG';
 import { useTicketmasterImage } from '@/hooks/useTicketmasterImage';
 import { parseSVGSections } from '@/lib/svgParser';
+import { generateSectionPricesFromEventRange, bakePricingIntoSVG } from '@/hooks/useEventPricing';
 import { SelectedSeat, VenueSection } from '@/types';
 import { toast } from 'sonner';
 import { getPriceCategory } from '@/lib/svgParser';
@@ -30,18 +31,33 @@ const EventDetailPage = () => {
   // Use per-event SVG copy if available (has baked-in pricing), otherwise shared venue SVG
   const hasEventSvg = !!event?.event_svg_content;
   const svgMapName = event?.svg_map_name || undefined;
+  
   const { svgContent: sharedSvgContent, sections: sharedSections, loading: svgLoading, error: svgError, isFallback } = useVenueSVG(
     hasEventSvg ? undefined : svgMapName
   );
 
-  // If event has its own SVG copy, parse sections from it
-  const svgContent = hasEventSvg ? event.event_svg_content : sharedSvgContent;
-  const svgSections = useMemo(() => {
+  // If event has its own baked SVG, use it. Otherwise, dynamically apply pricing to shared SVG.
+  const { svgContent, svgSections } = useMemo(() => {
+    // Case 1: Event has its own baked SVG copy
     if (hasEventSvg && event?.event_svg_content) {
-      return parseSVGSections(event.event_svg_content);
+      const parsed = parseSVGSections(event.event_svg_content);
+      console.log('[EventDetail] Using BAKED event SVG:', parsed.length, 'sections');
+      return { svgContent: event.event_svg_content, svgSections: parsed };
     }
-    return sharedSections;
-  }, [hasEventSvg, event?.event_svg_content, sharedSections]);
+
+    // Case 2: No baked SVG — dynamically apply smart pricing to shared SVG
+    if (sharedSvgContent && sharedSections.length > 0 && event && event.min_price > 0 && event.max_price > 0) {
+      const sectionPrices = generateSectionPricesFromEventRange(sharedSections, event.min_price, event.max_price);
+      const pricedSvg = bakePricingIntoSVG(sharedSvgContent, sectionPrices);
+      const pricedSections = parseSVGSections(pricedSvg);
+      console.log('[EventDetail] Dynamically priced SVG:', pricedSections.length, 'sections, range $' + event.min_price + '-$' + event.max_price);
+      return { svgContent: pricedSvg, svgSections: pricedSections };
+    }
+
+    // Case 3: Fallback to shared SVG as-is
+    console.log('[EventDetail] Using SHARED SVG as-is:', sharedSections.length, 'sections');
+    return { svgContent: sharedSvgContent, svgSections: sharedSections };
+  }, [hasEventSvg, event?.event_svg_content, sharedSvgContent, sharedSections, event?.min_price, event?.max_price]);
   
   // Fetch performer image from Ticketmaster if needed
   const { imageUrl: performerImageUrl } = useTicketmasterImage(
