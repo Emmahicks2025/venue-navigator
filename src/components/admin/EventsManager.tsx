@@ -17,8 +17,9 @@ import { Plus, Pencil, Trash2, Search, Calendar, MapPin, DollarSign, ChevronsUpD
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { formatPrice, formatDate } from '@/data/events';
-import { useVenueSVG } from '@/hooks/useVenueSVG';
-import { generateSectionPricesFromEventRange, saveEventPricingOverrides } from '@/hooks/useEventPricing';
+import { generateSectionPricesFromEventRange, bakePricingIntoSVG } from '@/hooks/useEventPricing';
+import { parseSVGSections } from '@/lib/svgParser';
+import { collection as fbCollection, query as fbQuery, where, getDocs as fbGetDocs } from 'firebase/firestore';
 
 interface Event {
   id: string;
@@ -255,12 +256,34 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
   const [svgMapOpen, setSvgMapOpen] = useState(false);
   const venueMaps = useMemo(() => [...venueNames].sort(), []);
 
-  // Load SVG sections for the selected venue map (to generate per-section pricing)
-  const { sections: svgSections } = useVenueSVG(formData.svg_map_name || undefined);
+  /**
+   * Fetch the base SVG content for a venue map name.
+   * Tries Firestore venue_maps first, then static file fallback.
+   */
+  const fetchBaseSVG = async (mapName: string): Promise<string | null> => {
+    // Try Firestore
+    const normalizedName = mapName.replace(/&/g, '');
+    const snapshot = await fbGetDocs(
+      fbQuery(fbCollection(db, 'venue_maps'), where('venue_name', '==', normalizedName))
+    );
+    if (!snapshot.empty) {
+      const content = snapshot.docs[0].data().svg_content as string;
+      if (content?.includes('<svg')) return content;
+    }
+    // Fallback: static file
+    try {
+      const res = await fetch(`/venue-maps/${encodeURIComponent(normalizedName)}.svg`);
+      if (res.ok) {
+        const content = await res.text();
+        if (content.includes('<svg')) return content;
+      }
+    } catch {}
+    return null;
+  };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const eventData = {
+      const eventData: Record<string, any> = {
         ...formData,
         svg_map_name: formData.svg_map_name || null,
         ticket_url: formData.ticket_url || null,
@@ -274,6 +297,21 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
         updated_at: new Date().toISOString(),
       };
 
+      // If we have an SVG map and valid prices, bake pricing into a per-event SVG copy
+      if (formData.svg_map_name && formData.min_price > 0 && formData.max_price > 0) {
+        const baseSvg = await fetchBaseSVG(formData.svg_map_name);
+        if (baseSvg) {
+          const sections = parseSVGSections(baseSvg);
+          if (sections.length > 0) {
+            console.log(`[EventPricing] Baking prices into SVG copy: ${sections.length} sections, $${formData.min_price}-$${formData.max_price}`);
+            const sectionPrices = generateSectionPricesFromEventRange(sections, formData.min_price, formData.max_price);
+            const pricedSvg = bakePricingIntoSVG(baseSvg, sectionPrices);
+            eventData.event_svg_content = pricedSvg;
+            console.log('[EventPricing] SVG copy with pricing saved to event doc');
+          }
+        }
+      }
+
       let eventId = event?.id;
 
       if (eventId) {
@@ -284,21 +322,6 @@ function EventForm({ event, onSuccess }: { event?: Event; onSuccess: () => void 
           created_at: new Date().toISOString(),
         });
         eventId = newDoc.id;
-      }
-
-      // Save per-event section pricing overrides if we have SVG sections and prices
-      if (eventId && svgSections.length > 0 && formData.min_price > 0 && formData.max_price > 0) {
-        console.log(`[EventPricing] Generating prices for ${svgSections.length} sections, range $${formData.min_price}-$${formData.max_price}`);
-        const sectionPrices = generateSectionPricesFromEventRange(
-          svgSections,
-          formData.min_price,
-          formData.max_price
-        );
-        console.log('[EventPricing] Section prices:', JSON.stringify(sectionPrices.slice(0, 5)));
-        await saveEventPricingOverrides(eventId, sectionPrices);
-        console.log('[EventPricing] Overrides saved to Firestore');
-      } else {
-        console.warn('[EventPricing] Skipped pricing — sections:', svgSections.length, 'min:', formData.min_price, 'max:', formData.max_price);
       }
     },
     onSuccess: () => {

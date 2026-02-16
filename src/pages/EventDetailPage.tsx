@@ -11,7 +11,7 @@ import { useCart } from '@/context/CartContext';
 import { useEventById } from '@/hooks/useDbEvents';
 import { useVenueSVG } from '@/hooks/useVenueSVG';
 import { useTicketmasterImage } from '@/hooks/useTicketmasterImage';
-import { useEventPricing, applySectionOverrides } from '@/hooks/useEventPricing';
+import { parseSVGSections } from '@/lib/svgParser';
 import { SelectedSeat, VenueSection } from '@/types';
 import { toast } from 'sonner';
 import { getPriceCategory } from '@/lib/svgParser';
@@ -27,20 +27,21 @@ const EventDetailPage = () => {
 
   const { data: event, isLoading: eventLoading } = useEventById(id);
   
-  // Load SVG map for the venue
+  // Use per-event SVG copy if available (has baked-in pricing), otherwise shared venue SVG
+  const hasEventSvg = !!(event as any)?.event_svg_content;
   const svgMapName = event?.svg_map_name || undefined;
-  const { svgContent, sections: rawSvgSections, loading: svgLoading, error: svgError, isFallback } = useVenueSVG(
-    svgMapName || undefined
+  const { svgContent: sharedSvgContent, sections: sharedSections, loading: svgLoading, error: svgError, isFallback } = useVenueSVG(
+    hasEventSvg ? undefined : svgMapName
   );
 
-  // Load per-event pricing overrides
-  const { overrides: pricingOverrides } = useEventPricing(event?.id);
-
-  // Merge SVG sections with event-specific pricing overrides
-  const svgSections = useMemo(
-    () => applySectionOverrides(rawSvgSections, pricingOverrides),
-    [rawSvgSections, pricingOverrides]
-  );
+  // If event has its own SVG copy, parse sections from it
+  const svgContent = hasEventSvg ? (event as any).event_svg_content : sharedSvgContent;
+  const svgSections = useMemo(() => {
+    if (hasEventSvg && (event as any).event_svg_content) {
+      return parseSVGSections((event as any).event_svg_content);
+    }
+    return sharedSections;
+  }, [hasEventSvg, (event as any)?.event_svg_content, sharedSections]);
   
   // Fetch performer image from Ticketmaster if needed
   const { imageUrl: performerImageUrl } = useTicketmasterImage(
