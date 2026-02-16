@@ -85,8 +85,50 @@ export async function saveEventPricingOverrides(
 }
 
 /**
- * Generate per-section pricing based on event-level min/max prices,
- * scaling proportionally from SVG base prices.
+ * Compute a desirability score (0–1) for a section based on its name/ID.
+ * Closer to stage/pitch/floor → higher score → more expensive.
+ */
+function getSectionDesirability(section: SVGSection): number {
+  const name = (section.name + ' ' + section.id).toLowerCase();
+
+  // Premium keywords → top tier
+  if (/\b(floor|field|pit|vip|club|premium|courtside|ringside|platinum)\b/.test(name)) return 0.95 + Math.random() * 0.05;
+  if (/\b(suite|box|lounge|loge)\b/.test(name)) return 0.85 + Math.random() * 0.1;
+
+  // Try to extract a numeric level/section number
+  const levelMatch = name.match(/\b(?:level|tier)\s*(\d)/);
+  if (levelMatch) {
+    const level = parseInt(levelMatch[1]);
+    if (level === 1) return 0.75 + Math.random() * 0.15;
+    if (level === 2) return 0.45 + Math.random() * 0.15;
+    return 0.15 + Math.random() * 0.15; // level 3+
+  }
+
+  // Section numbers: lower = closer = more expensive
+  const secNum = name.match(/(?:section\s*)?(\d+)/);
+  if (secNum) {
+    const num = parseInt(secNum[1]);
+    if (num <= 50) return 0.70 + Math.random() * 0.15;
+    if (num <= 120) return 0.55 + Math.random() * 0.15;
+    if (num <= 200) return 0.40 + Math.random() * 0.15;
+    if (num <= 300) return 0.25 + Math.random() * 0.15;
+    if (num <= 400) return 0.15 + Math.random() * 0.1;
+    return 0.05 + Math.random() * 0.1; // 500+
+  }
+
+  // Balcony / upper / nosebleed → cheap
+  if (/\b(balcony|upper|gallery|nosebleed|rear)\b/.test(name)) return 0.15 + Math.random() * 0.15;
+  if (/\b(mezzanine|terrace|middle)\b/.test(name)) return 0.40 + Math.random() * 0.15;
+  if (/\b(lower|orchestra|front|center|centre)\b/.test(name)) return 0.70 + Math.random() * 0.15;
+
+  // Fallback: use SVG base price ratio as hint
+  return 0.40 + Math.random() * 0.2;
+}
+
+/**
+ * Generate per-section pricing based on event-level min/max prices.
+ * Uses smart heuristics: sections closer to stage/pitch are priced higher,
+ * with slight randomness for natural variation.
  */
 export function generateSectionPricesFromEventRange(
   svgSections: SVGSection[],
@@ -101,23 +143,34 @@ export function generateSectionPricesFromEventRange(
 }> {
   if (svgSections.length === 0) return [];
 
-  // Find the SVG's overall price range
-  const svgMinPrice = Math.min(...svgSections.map(s => s.priceMin));
-  const svgMaxPrice = Math.max(...svgSections.map(s => s.priceMax));
-  const svgRange = svgMaxPrice - svgMinPrice || 1;
   const eventRange = eventMaxPrice - eventMinPrice || 1;
 
-  return svgSections.map(section => {
-    // Scale proportionally: where this section sits in the SVG price range
-    const minRatio = (section.priceMin - svgMinPrice) / svgRange;
-    const maxRatio = (section.priceMax - svgMinPrice) / svgRange;
-    const currentRatio = (section.currentPrice - svgMinPrice) / svgRange;
+  // Score each section
+  const scored = svgSections.map(section => ({
+    section,
+    score: getSectionDesirability(section),
+  }));
+
+  // Normalize scores to 0–1 range across all sections
+  const minScore = Math.min(...scored.map(s => s.score));
+  const maxScore = Math.max(...scored.map(s => s.score));
+  const scoreRange = maxScore - minScore || 1;
+
+  return scored.map(({ section, score }) => {
+    const normalizedScore = (score - minScore) / scoreRange;
+
+    // Add a small spread for min/max around the current price
+    const spreadFactor = 0.08 + Math.random() * 0.07; // 8-15% spread
+    const basePrice = eventMinPrice + normalizedScore * eventRange;
+    const priceMin = Math.round(Math.max(eventMinPrice, basePrice * (1 - spreadFactor)));
+    const priceMax = Math.round(Math.min(eventMaxPrice, basePrice * (1 + spreadFactor)));
+    const currentPrice = Math.round(basePrice);
 
     return {
       section_id: section.id,
-      price_min: Math.round(eventMinPrice + minRatio * eventRange),
-      price_max: Math.round(eventMinPrice + maxRatio * eventRange),
-      current_price: Math.round(eventMinPrice + currentRatio * eventRange),
+      price_min: priceMin,
+      price_max: priceMax,
+      current_price: currentPrice,
       available: section.available,
     };
   });
