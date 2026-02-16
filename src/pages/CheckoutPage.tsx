@@ -12,6 +12,7 @@ import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 const CheckoutPage = () => {
@@ -137,6 +138,27 @@ const CheckoutPage = () => {
           });
         }
       }
+
+      // Send confirmation email (fire-and-forget)
+      supabase.functions.invoke('send-order-confirmation', {
+        body: {
+          to: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          orderNumber,
+          items: items.map(item => ({
+            eventName: item.eventName,
+            eventDate: item.eventDate,
+            venueName: item.venueName,
+            performer: item.performer,
+            seats: item.seats,
+            isFifaEvent: item.eventName.toLowerCase().includes('fifa') || item.eventName.toLowerCase().includes('world cup'),
+          })),
+          subtotal: totalPrice,
+          serviceFee,
+          total: grandTotal,
+        },
+      }).catch(err => console.error('Email send failed:', err));
 
       clearCart();
       toast.success('Order confirmed! Check your email for tickets.');
